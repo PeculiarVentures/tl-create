@@ -11,6 +11,24 @@ For example to extract the roots that are trusted for email, code and web from b
 node tl-create --eutil -mozilla -for "email, code, web" roots.pem
 ```
 
+This would produce a file that looked something like this:
+```
+ Country: UK
+ Operator: European Commission
+ Source: EUTL
+ -----BEGIN CERTIFICATE-----
+ ...
+ ...
+ -----END CERTIFICATE-----
+ Operator: DigiCert, Inc
+ For: email, www, code
+ Source: Mozilla
+ -----BEGIN CERTIFICATE-----
+ ...
+ ...
+ -----END CERTIFICATE-----
+```
+
 ## Bug Reporting
 Please report bugs either as pull requests or as issues in the issue tracker. tl-create has a full disclosure vulnerability policy. Please do NOT attempt to report any security vulnerability in this code privately to anybody.
 
