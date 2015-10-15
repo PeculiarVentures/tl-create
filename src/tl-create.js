@@ -5,21 +5,27 @@
  */
 
 
-function certMozilla() {
+function certMozilla(codeFilter) {
 	this.attributes=[];
 	this.certTxt=null;
 	this.curIndex=0;
+	
+	for( var i in codeFilter) {
+		codeFilter[i] = "CKA_TRUST_"+ codeFilter[i];
+	};
+	this.codeFilterList= codeFilter;
+	
 }
 
-certMozilla.prototype.parse = function(body) {
-	console.log("parsing started ");
+certMozilla.prototype.parse = function(body,fws) {
+	//console.log("parsing started "+ this.codeFilterList);
 	this.certText = body.toString().split("\n");
 	this.findObjectDefinitionsSegment();
 	this.findTrustSegment();
 	this.findBeginDataSegment();
 	while( this.curIndex < this.certText.length) {
 		this.parseOneCertificate();
-		this.printCertificte();
+		this.printCertificte(fws);
 	}
 };
 
@@ -76,7 +82,7 @@ certMozilla.prototype.parseOneCertificate = function() {
 		if( res[0] == "CKA_CLASS") {	
 		 	curObj[res[0]] = {
 		 		attrType: res[1],
-				value:    res[2]
+		 		value:    res[2]
 			};
 		 	while(this.curIndex < this.certText.length) {
 		 		
@@ -100,14 +106,18 @@ certMozilla.prototype.parseOneCertificate = function() {
 					
 					var trust = res[0].match(/(CKA_TRUST)/g);
 					if(  trust == "CKA_TRUST") {
-						if(typeof curObj[trust] !== "undefined") {
-							curObj[trust].value += "," + res[2];  
-						}
-						else {
-							curObj[trust] =  {
-								attrType: "String",
-								value:    res[2]
-							};	
+						if ( this.codeFilterList.indexOf( res[0] ) > -1 ) {
+							//console.log(res[0] + "  " +this.codeFilterList.indexOf( res[0] ));
+							if(typeof curObj[trust] !== "undefined") {
+								curObj[trust].value += "," + res[0];  
+								//console.log(curObj[trust].value );
+							}
+							else {
+								curObj[trust] =  {
+									attrType: "String",
+									value:    res[0]
+								};	
+							}
 						}
 					}
 					
@@ -149,16 +159,15 @@ certMozilla.prototype.parseOneCertificate = function() {
 	
 };
 
-certMozilla.prototype.printCertificte = function() {
+certMozilla.prototype.printCertificte = function(fws) {
 	
 	for(var attrib in this.attributes ) {
-		console.log("Country: ");
-		console.log( "Operator: "+ this.attributes[attrib].CKA_LABEL.value );
-		console.log("For: "+ this.attributes[attrib].CKA_TRUST.value );
-		console.log("Source: Mozilla");
-		console.log("-----BEGIN CERTIFICATE-----");
-		console.log( ( typeof this.attributes[attrib].CKA_VALUE !== 'undefined'  )?  this.attributes[attrib].CKA_VALUE.value :"" );
-		console.log("-----END CERTIFICATE-----\n\n");
+		fws.write( "Operator: "+ this.attributes[attrib].CKA_LABEL.value +"\n");
+		fws.write("For: "+ this.attributes[attrib].CKA_TRUST.value +"\n");
+		fws.write("Source: Mozilla"+"\n");
+		fws.write("-----BEGIN CERTIFICATE-----"+"\n");
+		fws.write( ( typeof this.attributes[attrib].CKA_VALUE !== 'undefined'  )?  this.attributes[attrib].CKA_VALUE.value :"" );
+		fws.write("\n-----END CERTIFICATE-----\n");
 			
 	}
 };
@@ -173,20 +182,21 @@ function certEutl () {
     
 }
 
-certEutl.prototype.parse = function parse(body)
+certEutl.prototype.parse = function parse(body,fws)
 {
 	
 	body.TrustServiceStatusList.SchemeInformation[0].PointersToOtherTSL.forEach(function (pointToOtherTsl) {
 			pointToOtherTsl.OtherTSLPointer.forEach(function(otherTslPointer) {
 				
 				var addInfo = parseAdditionalInformation(otherTslPointer.AdditionalInformation);
-				for( var i in otherTslPointer.ServiceDigitalIdentities ){
-					console.log("Country: " + addInfo.country);
-					console.log("Operator: " + addInfo.operatorName);
-					console.log("Operator: " + addInfo.operatorName);
-					console.log("-----BEGIN CERTIFICATE-----");
-					console.dir(otherTslPointer.ServiceDigitalIdentities[i].ServiceDigitalIdentity[0].DigitalId[0].X509Certificate[0]);
-					console.log("-----END CERTIFICATE-----\n\n");
+				for( var i in otherTslPointer.ServiceDigitalIdentities ) {
+					fws.write("Country: " + addInfo.country+"\n");
+					fws.write("Operator: " + addInfo.operatorName+"\n");
+					fws.write("Source: EUTL\n");
+					fws.write("-----BEGIN CERTIFICATE-----"+"\n");
+					fws.write(otherTslPointer.ServiceDigitalIdentities[i].ServiceDigitalIdentity[0].DigitalId[0].X509Certificate[0]+"\n");
+					fws.write("-----END CERTIFICATE-----\n");
+					
 				}
 			} );
 	});
@@ -219,7 +229,6 @@ function parseAdditionalInformation  (additionalInfoObj)
 
 var program = require('commander');
 var util = require('util');
-var xml4js = require('xml4js');
 var xml2js = require('xml2js');
 var fs = require('fs');
 
@@ -231,29 +240,34 @@ program
   .version('0.0.1')
   .option('-e, --eutil', 'EU Trust List Parse')
   .option('-m, --mozilla', 'Mozilla Trust List Parse')
-  .option('-f, --for [type]', 'Add the specified type for parse', 'email,code,www,roots.pem')
+  .option('-f, --for [type]', 'Add the specified type for parse', 'EMAIL_PROTECTION,CODE_SIGNING')
   .parse(process.argv);
   
 console.log('Parsing started:');
-
-if (program.eutil) {
-
-	console.log('Started parsing  - eutil');
+if(program.args[0]) {
+	var writableStream = fs.createWriteStream(program.args[0]);
+	if (program.eutil) {	
+		console.log('Started parsing  - eutil');
+		var data = fs.readFileSync(__dirname + euLocalUrl, {encoding: 'utf-8'});
+		var parser = new xml2js.Parser();
+		parser.parseString(data ,function (err, result) {
+		 	var euCertParser = new certEutl();
+		 	euCertParser.parse(result,writableStream);
+	    });
+	}
+	if (program.mozilla) {
+		console.log('Started parsing  - mozilla');
+		var data = fs.readFileSync(__dirname + mozillaLocalUrl, {encoding: 'utf-8'});
+		var codeFilter = program.for.split(",");
+		//console.log(codeFilter);
+		var mozillaCertParser = new certMozilla(codeFilter);
+		mozillaCertParser.parse(data,writableStream);
+	}
 	
-	var data = fs.readFileSync(__dirname + euLocalUrl, {encoding: 'utf-8'});
-	var parser = new xml2js.Parser();
-	 parser.parseString(data ,function (err, result) {
-	 	var euCertParser = new certEutl();
-	 	euCertParser.parse(result);
-    });
+	writableStream.end();
+}
+else {
+	console.log("output <filename> argument missing");
+	console.log("node tl-create --eutil -mozilla -for 'EMAIL_PROTECTION,CODE_SIGNING' <roots.pem>");	
 }
 
-if (program.mozilla) 
-{
-	console.log('Started parsing  - mozilla');
-	var request = require('request');
-	console.log("Data received from url....");
-	var data = fs.readFileSync(__dirname + mozillaLocalUrl, {encoding: 'utf-8'});
-	var mozillaCertParser = new certMozilla();
-	mozillaCertParser.parse(data);
-}
