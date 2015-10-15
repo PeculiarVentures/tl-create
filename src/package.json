@@ -1,11 +1,24 @@
 {
-  "name": "src",
+  "name": "tl-creat",
   "version": "1.0.0",
-  "description": "",
-  "main": "tl-creat.js",
+  "main": "tl-create.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC"
+  "author": "Asif ur rahman",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^2.9.0",
+    "xml2js": "^0.4.13"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PeculiarVentures/tl-create.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PeculiarVentures/tl-create/issues"
+  },
+  "homepage": "https://github.com/PeculiarVentures/tl-create#readme",
+  "description": ""
 }
