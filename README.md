@@ -58,3 +58,6 @@ Please report bugs either as pull requests or as issues in the issue tracker. tl
 ## Related
 - [CommanderJS](https://github.com/tj/commander.js)
 - [PKIjs](https://pkijs.org)
+- [CATT](https://github.com/kirei/catt)
+- [tlbrowser](http://tlbrowser.tsl.website)
+- [autoroot update](https://unmitigatedrisk.com/?p=259)
