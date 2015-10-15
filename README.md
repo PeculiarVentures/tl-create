@@ -8,7 +8,27 @@ Each of these lists have their own formats, this tool parses the lists provided 
 For example to extract the roots that are trusted for email, code and web from both the EU Trust List and the Mozilla list the command would look like this:
 
 ```
-node tl-create --eutil -mozilla -for "email, code, web" roots.pem
+node tl-create --eutil -mozilla --for 'EMAIL_PROTECTION,CODE_SIGNING' roots.pem
+```
+
+Valid Mozilla trust purposes 
+```
+  DIGITAL_SIGNATURE
+  NON_REPUDIATION
+  KEY_ENCIPHERMENT
+  DATA_ENCIPHERMENT
+  KEY_AGREEMENT
+  KEY_CERT_SIGN
+  CRL_SIGN
+  SERVER_AUTH
+  CLIENT_AUTH
+  CODE_SIGNING
+  EMAIL_PROTECTION
+  IPSEC_END_SYSTEM
+  IPSEC_TUNNEL
+  IPSEC_USER
+  TIME_STAMPING
+  STEP_UP_APPROVED
 ```
 
 This would produce a file that looked something like this:

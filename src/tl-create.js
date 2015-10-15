@@ -233,7 +233,7 @@ var xml2js = require('xml2js');
 var fs = require('fs');
 
 var euLocalUrl = "/../data/EUTrustedListsofCertificationServiceProvidersXML.xml";
-var mozillaUrl = "http://mxr.mozilla.org/mozilla/source/security/nss/lib/ckfw/builtins/certdata.txt?raw=1";
+//var mozillaUrl = "http://mxr.mozilla.org/mozilla/source/security/nss/lib/ckfw/builtins/certdata.txt?raw=1";
 var mozillaLocalUrl = "/../data/certdata.txt";
 
 program
@@ -268,6 +268,6 @@ if(program.args[0]) {
 }
 else {
 	console.log("output <filename> argument missing");
-	console.log("node tl-create --eutil -mozilla -for 'EMAIL_PROTECTION,CODE_SIGNING' <roots.pem>");	
+	console.log("EX: node tl-create --eutil -mozilla -for 'EMAIL_PROTECTION,CODE_SIGNING' <roots.pem>");	
 }
 
