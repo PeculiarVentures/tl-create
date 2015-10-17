@@ -4,7 +4,6 @@
  * 
  */
 
-
 function certMozilla(codeFilter) {
 	this.attributes=[];
 	this.certTxt=null;
@@ -12,7 +11,7 @@ function certMozilla(codeFilter) {
 	
 	for( var i in codeFilter) {
 		codeFilter[i] = "CKA_TRUST_"+ codeFilter[i];
-	};
+	}
 	this.codeFilterList= codeFilter;
 	
 }
@@ -73,9 +72,9 @@ certMozilla.prototype.findBeginDataSegment = function() {
 		this.curIndex++;
 	}
 };
+
 certMozilla.prototype.parseOneCertificate = function() {
-	while( this.curIndex < this.certText.length )
-	{
+	while( this.curIndex < this.certText.length ) {
 		var isPushed = 0 ;
 		var curObj =  {} ;
 		var res = this.certText[this.curIndex++].split(/[ ,]+/);
@@ -182,44 +181,68 @@ function certEutl () {
     
 }
 
-certEutl.prototype.parse = function parse(body,fws)
+
+
+certEutl.prototype.parse = function parse(data,fws)
 {
 	
-	body.TrustServiceStatusList.SchemeInformation[0].PointersToOtherTSL.forEach(function (pointToOtherTsl) {
-			pointToOtherTsl.OtherTSLPointer.forEach(function(otherTslPointer) {
+	data[ prepareTagName('TrustServiceStatusList') ][prepareTagName('TrustServiceProviderList')].forEach(function (trustServiceProviderList) {
+	
+		trustServiceProviderList[prepareTagName('TrustServiceProvider')].forEach(function(trustServiceProvider) {
+			
+			tspInfo = trustServiceProvider[ prepareTagName('TSPInformation')];
+			var addInfo = parseAdditionalInformation( tspInfo[0] );
+			
+			tspServiceList = trustServiceProvider[ prepareTagName('TSPServices')];
+			//console.dir(tspServiceList );
+			for( var tspServiceInd in tspServiceList) {
+				tspService = tspServiceList[tspServiceInd ];
+				//console.log(tspService[prepareTagName('TSPService')][0][prepareTagName('ServiceInformation')][0][prepareTagName('ServiceTypeIdentifier')]);
+				serviceInfo = tspService[prepareTagName('TSPService')][0][prepareTagName('ServiceInformation')][0];
+				serviceTypeIdentifier = serviceInfo[prepareTagName('ServiceTypeIdentifier')][0];
 				
-				var addInfo = parseAdditionalInformation(otherTslPointer.AdditionalInformation);
-				for( var i in otherTslPointer.ServiceDigitalIdentities ) {
-					fws.write("Country: " + addInfo.country+"\n");
-					fws.write("Operator: " + addInfo.operatorName+"\n");
-					fws.write("Source: EUTL\n");
-					fws.write("-----BEGIN CERTIFICATE-----"+"\n");
-					fws.write(otherTslPointer.ServiceDigitalIdentities[i].ServiceDigitalIdentity[0].DigitalId[0].X509Certificate[0]+"\n");
-					fws.write("-----END CERTIFICATE-----\n");
+				matchedStrCAQC = serviceTypeIdentifier.toString().match(/.*(CA\/QC)/g);
+				NationalRootCAQC = serviceTypeIdentifier.toString().match(/.*(NationalRootCA-QC)/g);
+				matchedStrCAPKC = serviceTypeIdentifier.toString().match(/.*(CA\/PKC)/g);
+				if( matchedStrCAQC != null  || NationalRootCAQC !=null || matchedStrCAPKC != null ) {
 					
-				}
-			} );
+					for( var ind in serviceInfo[prepareTagName('ServiceDigitalIdentity')] ) {
+							serviceIdent = serviceInfo[prepareTagName('ServiceDigitalIdentity')][ind];							
+							serviceIdent[prepareTagName('DigitalId')].forEach(function(digitalId) {
+								if( typeof digitalId[prepareTagName('X509Certificate')] !== 'undefined' ){
+									fws.write("Country: " + addInfo.country+"\n");
+									fws.write("Operator: " + addInfo.serviceProviderName+"\n");
+									fws.write("Source: EUTL\n");
+									fws.write("-----BEGIN CERTIFICATE-----"+"\n");
+									for( var i =0 ; i< Math.ceil(digitalId[prepareTagName('X509Certificate')][0].length/64);i++) {
+										fws.write(digitalId[prepareTagName('X509Certificate')][0].slice(i*64 , i*64+64 )+"\n");	
+									}
+										
+									fws.write("-----END CERTIFICATE-----\n\n");
+								}
+							});
+							
+					}	
+				} 
+			};
+		});	
 	});
 	
 };
 
-function parseAdditionalInformation  (additionalInfoObj)
+function prepareTagName (name) {
+	return prefix+name ;
+};
+
+function parseAdditionalInformation  (tspInfo)
 {
-	var parsedInfo =  {country: "" , operatorName:"" };
-	for( var i in additionalInfoObj[0].OtherInformation ) {
-		if( typeof additionalInfoObj[0].OtherInformation[i].SchemeOperatorName  !== "undefined" ) {
-			var operatorNames = additionalInfoObj[0].OtherInformation[i].SchemeOperatorName ;
-			for(var ind in operatorNames) {
-				if( operatorNames[ind].Name[0].$['xml:lang'] == "en") {
-					parsedInfo.operatorName = operatorNames[ind].Name[0]._;
-				}
-			} 
-				
-		}
-		if( typeof additionalInfoObj[0].OtherInformation[i].SchemeTerritory  !== "undefined" ) {
-			parsedInfo.country= additionalInfoObj[0].OtherInformation[i].SchemeTerritory[0]; 
-		}	
-	}
+	var parsedInfo =  {country: "" , serviceProviderName:"" };
+	tspInfo[prepareTagName('TSPName')][0][ prepareTagName('Name')].forEach(function(name) {
+		 if( name.$['xml:lang'] == "en") {
+		 	parsedInfo.serviceProviderName =  name._ ;
+		 }
+	});
+	parsedInfo.country = tspInfo[prepareTagName('TSPAddress')][0][ prepareTagName('PostalAddresses')][0][ prepareTagName('PostalAddress')][0][prepareTagName('CountryName')][0];
 	return parsedInfo ;
 }
 
@@ -231,8 +254,8 @@ var program = require('commander');
 var util = require('util');
 var xml2js = require('xml2js');
 var fs = require('fs');
-
-var euLocalUrl = "/../data/EUTrustedListsofCertificationServiceProvidersXML.xml";
+var prefix = "tsl:";//user by eutil 
+var euLocalUrl = "/../data/currenttl.xml";
 //var mozillaUrl = "http://mxr.mozilla.org/mozilla/source/security/nss/lib/ckfw/builtins/certdata.txt?raw=1";
 var mozillaLocalUrl = "/../data/certdata.txt";
 
@@ -252,6 +275,12 @@ if(program.args[0]) {
 		var parser = new xml2js.Parser();
 		parser.parseString(data ,function (err, result) {
 		 	var euCertParser = new certEutl();
+		 	
+		 	if( typeof result['TrustServiceStatusList'] !=='undefined' ) {
+		 			prefix = "";
+		 			//console.log("prefix "+ prefix);	
+		 	}
+		 		
 		 	euCertParser.parse(result,writableStream);
 	    });
 	}
@@ -259,7 +288,7 @@ if(program.args[0]) {
 		console.log('Started parsing  - mozilla');
 		var data = fs.readFileSync(__dirname + mozillaLocalUrl, {encoding: 'utf-8'});
 		var codeFilter = program.for.split(",");
-		//console.log(codeFilter);
+		
 		var mozillaCertParser = new certMozilla(codeFilter);
 		mozillaCertParser.parse(data,writableStream);
 	}
@@ -268,6 +297,6 @@ if(program.args[0]) {
 }
 else {
 	console.log("output <filename> argument missing");
-	console.log("EX: node tl-create --eutil -mozilla -for 'EMAIL_PROTECTION,CODE_SIGNING' <roots.pem>");	
+	console.log("EX: node tl-create --eutil -mozilla --for 'EMAIL_PROTECTION,CODE_SIGNING' <roots.pem>");	
 }
 
