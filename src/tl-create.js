@@ -141,7 +141,7 @@ certMozilla.prototype.parseOneCertificate = function() {
 					}
 					curObj[res[0]] =  {
 						attrType: res[1],
-						value:   data.toString('base64') 
+						value:   data.toString('ascii') 
 					};
 					
 					
