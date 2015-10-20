@@ -4,6 +4,7 @@
  * 
  */
 
+
 function certMozilla(codeFilter) {
 	this.attributes=[];
 	this.certTxt=null;
@@ -16,7 +17,7 @@ function certMozilla(codeFilter) {
 	
 }
 
-certMozilla.prototype.parse = function(body,fws) {
+certMozilla.prototype.parse = function(body,fws,outputFormat) {
 	//console.log("parsing started "+ this.codeFilterList);
 	this.certText = body.toString().split("\n");
 	this.findObjectDefinitionsSegment();
@@ -24,7 +25,7 @@ certMozilla.prototype.parse = function(body,fws) {
 	this.findBeginDataSegment();
 	while( this.curIndex < this.certText.length) {
 		this.parseOneCertificate();
-		this.printCertificte(fws);
+		this.printCertificte(fws,outputFormat);
 	}
 };
 
@@ -72,12 +73,14 @@ certMozilla.prototype.findBeginDataSegment = function() {
 		this.curIndex++;
 	}
 };
-
+countLbl =0 ;
 certMozilla.prototype.parseOneCertificate = function() {
 	while( this.curIndex < this.certText.length ) {
 		var isPushed = 0 ;
 		var curObj =  {} ;
 		var res = this.certText[this.curIndex++].split(/[ ,]+/);
+		if (res[0].match(/^#|^\s*$/)) continue;
+		
 		if( res[0] == "CKA_CLASS") {	
 		 	curObj[res[0]] = {
 		 		attrType: res[1],
@@ -86,12 +89,11 @@ certMozilla.prototype.parseOneCertificate = function() {
 		 	while(this.curIndex < this.certText.length) {
 		 		
 		 		res = this.certText[this.curIndex].split(/[ ,]+/);
-		 		if( res.length == 3 &&  res[0] == "CKA_CLASS" && res[2] !="CKO_NSS_TRUST"  ) {
+		 		if( res.length == 3 &&  res[0] == "CKA_CLASS" && res[2].match(/(CKO_NSS_TRUST)/g) !="CKO_NSS_TRUST"  ) {
 					isPushed = 1 ;
 					this.attributes.push(curObj);
 					break;
 				}
-				
 				if(res[0] == "CKA_LABEL" ) {
 					
 					var lblValue = this.certText[this.curIndex].split(/CKA_LABEL UTF8 \"(.*)\"/);
@@ -105,11 +107,11 @@ certMozilla.prototype.parseOneCertificate = function() {
 					
 					var trust = res[0].match(/(CKA_TRUST)/g);
 					if(  trust == "CKA_TRUST") {
-						if ( this.codeFilterList.indexOf( res[0] ) > -1 ) {
-							//console.log(res[0] + "  " +this.codeFilterList.indexOf( res[0] ));
+						if ( this.codeFilterList.indexOf( res[0] ) > -1 || this.codeFilterList.indexOf( "CKA_TRUST_ALL" ) > -1) {
+							
 							if(typeof curObj[trust] !== "undefined") {
 								curObj[trust].value += "," + res[0];  
-								//console.log(curObj[trust].value );
+							
 							}
 							else {
 								curObj[trust] =  {
@@ -126,22 +128,28 @@ certMozilla.prototype.parseOneCertificate = function() {
 					};
 						
 				}			
-				else if(res.length == 2 && res[1] == "MULTILINE_OCTAL")
-				{
+				else if(res.length == 2 && res[1].match(/(MULTILINE_OCTAL)/g) == "MULTILINE_OCTAL") {
 					 
 					
 					var data="";
-					while( this.certText[++this.curIndex] != "END")
+					while( this.certText[++this.curIndex].match(/(END)/g) != "END")
 					{
-						var octArr = this.certText[this.curIndex].split('\\'); 
-						for( var i=1; i < octArr.length ; i++ ) {
-							data+= String.fromCharCode( parseInt(octArr[i].toString(),8) ) ;
-						}
-						this.curIndex++;
+						data += this.certText[this.curIndex] ;
 					}
+					var offset = 0;
+					var bytes = data.split('\\');
+					bytes.shift();
+					var converted = new Buffer(bytes.length);
+					while(bytes.length > 0) {
+   						converted.writeUInt8(parseInt(bytes.shift(), 8), offset++);
+  					}
 					curObj[res[0]] =  {
 						attrType: res[1],
-						value:   data.toString('ascii') 
+						value:  
+						{
+							js:	converted.toString('base64').replace(/(.{1,76})/g, '  "$1\\n" +\n'),
+							pem: converted.toString('base64').replace(/(.{1,76})/g, '$1\n')
+						} 
 					};
 					
 					
@@ -154,21 +162,43 @@ certMozilla.prototype.parseOneCertificate = function() {
 			this.attributes[0]= curObj;
 		}
 		
-	}
+	} 
 	
 };
 
-certMozilla.prototype.printCertificte = function(fws) {
+certMozilla.prototype.printCertificte = function(fws,outputFormat) {
 	
+	var isFirstOutput = true ;
 	for(var attrib in this.attributes ) {
-		fws.write( "Operator: "+ this.attributes[attrib].CKA_LABEL.value +"\n");
-		fws.write("For: "+ this.attributes[attrib].CKA_TRUST.value +"\n");
-		fws.write("Source: Mozilla"+"\n");
-		fws.write("-----BEGIN CERTIFICATE-----"+"\n");
-		fws.write( ( typeof this.attributes[attrib].CKA_VALUE !== 'undefined'  )?  this.attributes[attrib].CKA_VALUE.value :"" );
-		fws.write("\n-----END CERTIFICATE-----\n");
+		if( outputFormat == "pem"){
+			fws.write( "Operator: "+ this.attributes[attrib].CKA_LABEL.value +"\n");
+			fws.write("For: "+ this.attributes[attrib].CKA_TRUST.value +"\n");
+			fws.write("Source: Mozilla"+"\n");
+			fws.write("-----BEGIN CERTIFICATE-----"+"\n");
+			fws.write( ( typeof this.attributes[attrib].CKA_VALUE !== 'undefined'  )?  this.attributes[attrib].CKA_VALUE.value.pem :"" );
+			fws.write("-----END CERTIFICATE-----\n");
+		}
+		else if( outputFormat == "js"){
 			
+			if(isFirstOutput)
+			{
+				isFirstOutput = false;
+				fws.write('var MozillaTrustedRoots = [\n'); 
+				fws.write('"-----BEGIN CERTIFICATE-----" + \n');
+				fws.write(( typeof this.attributes[attrib].CKA_VALUE !== 'undefined'  )?  this.attributes[attrib].CKA_VALUE.value.js  :""  );
+				
+			}
+			else {
+				fws.write('"-----BEGIN CERTIFICATE-----" + \n');
+				fws.write( ( typeof this.attributes[attrib].CKA_VALUE !== 'undefined'  )?  this.attributes[attrib].CKA_VALUE.value.js :"" );
+			}
+			
+			fws.write('"-----END CERTIFICATE-----",\n' );
+		}
 	}
+	
+	if(outputFormat == "js")
+		fws.write( '];\n\n' ) ;
 };
 
 /*
@@ -183,9 +213,9 @@ function certEutl () {
 
 
 
-certEutl.prototype.parse = function parse(data,fws)
+certEutl.prototype.parse = function parse(data,fws,outputFormat)
 {
-	
+	var isFirstOutput = true ;
 	data[ prepareTagName('TrustServiceStatusList') ][prepareTagName('TrustServiceProviderList')].forEach(function (trustServiceProviderList) {
 	
 		trustServiceProviderList[prepareTagName('TrustServiceProvider')].forEach(function(trustServiceProvider) {
@@ -205,28 +235,48 @@ certEutl.prototype.parse = function parse(data,fws)
 				NationalRootCAQC = serviceTypeIdentifier.toString().match(/.*(NationalRootCA-QC)/g);
 				matchedStrCAPKC = serviceTypeIdentifier.toString().match(/.*(CA\/PKC)/g);
 				if( matchedStrCAQC != null  || NationalRootCAQC !=null || matchedStrCAPKC != null ) {
-					
-					for( var ind in serviceInfo[prepareTagName('ServiceDigitalIdentity')] ) {
-							serviceIdent = serviceInfo[prepareTagName('ServiceDigitalIdentity')][ind];							
-							serviceIdent[prepareTagName('DigitalId')].forEach(function(digitalId) {
-								if( typeof digitalId[prepareTagName('X509Certificate')] !== 'undefined' ){
-									fws.write("Country: " + addInfo.country+"\n");
-									fws.write("Operator: " + addInfo.serviceProviderName+"\n");
-									fws.write("Source: EUTL\n");
-									fws.write("-----BEGIN CERTIFICATE-----"+"\n");
-									for( var i =0 ; i< Math.ceil(digitalId[prepareTagName('X509Certificate')][0].length/64);i++) {
-										fws.write(digitalId[prepareTagName('X509Certificate')][0].slice(i*64 , i*64+64 )+"\n");	
-									}
+					//console.log(serviceInfo[prepareTagName('ServiceStatus')]);
+					serviceStatus = serviceInfo[prepareTagName('ServiceStatus')][0].toString().match(/.*(TrustedList\/Svcstatus\/accredited)/g);
+					//console.log(serviceStatus );
+					if( serviceStatus != null ) {
+						for( var ind in serviceInfo[prepareTagName('ServiceDigitalIdentity')] ) {
+								serviceIdent = serviceInfo[prepareTagName('ServiceDigitalIdentity')][ind];							
+								serviceIdent[prepareTagName('DigitalId')].forEach(function(digitalId) {
+									if( typeof digitalId[prepareTagName('X509Certificate')] !== 'undefined' ) {
+										if(outputFormat == "pem" ) {
+											fws.write("Country: " + addInfo.country+"\n");
+											fws.write("Operator: " + addInfo.serviceProviderName+"\n");
+											fws.write("Source: EUTL\n");
+											fws.write("-----BEGIN CERTIFICATE-----"+"\n");
+											fws.write(digitalId[prepareTagName('X509Certificate')][0].replace(/(.{1,64})/g, '$1\n'));	
+											fws.write("-----END CERTIFICATE-----\n\n");
+										}
+										else if( outputFormat =="js"){
+											if( isFirstOutput ) {
+												isFirstOutput = false ;
+												fws.write('var EUTrustedRoots = [\n'); 
+												fws.write('"-----BEGIN CERTIFICATE-----" + \n');
+												fws.write(digitalId[prepareTagName('X509Certificate')][0].replace(/(.{1,76})/g, '  "$1\\n" +\n'));
+												
+											}
+											else {
+												fws.write(',"-----BEGIN CERTIFICATE-----" + \n');
+												fws.write(digitalId[prepareTagName('X509Certificate')][0].replace(/(.{1,76})/g, '  "$1\\n" +\n'));
+											}
+											fws.write('"-----END CERTIFICATE-----"\n' );
 										
-									fws.write("-----END CERTIFICATE-----\n\n");
-								}
-							});
-							
-					}	
+										}
+									}
+								});
+								
+						}
+					}
 				} 
 			};
 		});	
 	});
+	if( outputFormat == "js" ) 
+		fws.write("];\n\n");
 	
 };
 
@@ -256,14 +306,16 @@ var xml2js = require('xml2js');
 var fs = require('fs');
 var prefix = "tsl:";//user by eutil 
 var euLocalUrl = "/../data/currenttl.xml";
-//var mozillaUrl = "http://mxr.mozilla.org/mozilla/source/security/nss/lib/ckfw/builtins/certdata.txt?raw=1";
+var euUrl = "";
+var mozillaUrl = "http://mxr.mozilla.org/mozilla/source/security/nss/lib/ckfw/builtins/certdata.txt?raw=1";
 var mozillaLocalUrl = "/../data/certdata.txt";
 
 program
   .version('0.0.1')
   .option('-e, --eutil', 'EU Trust List Parse')
   .option('-m, --mozilla', 'Mozilla Trust List Parse')
-  .option('-f, --for [type]', 'Add the specified type for parse', 'EMAIL_PROTECTION,CODE_SIGNING')
+  .option('-f, --for [type]', 'Add the specified type for parse', 'ALL')
+  .option('-o, --format [type]', 'Add the specified type for output format', 'pem')
   .parse(process.argv);
   
 console.log('Parsing started:');
@@ -277,11 +329,10 @@ if(program.args[0]) {
 		 	var euCertParser = new certEutl();
 		 	
 		 	if( typeof result['TrustServiceStatusList'] !=='undefined' ) {
-		 			prefix = "";
-		 			//console.log("prefix "+ prefix);	
+		 			prefix = "";	
 		 	}
 		 		
-		 	euCertParser.parse(result,writableStream);
+		 	euCertParser.parse(result,writableStream,program.format);
 	    });
 	}
 	if (program.mozilla) {
@@ -290,7 +341,7 @@ if(program.args[0]) {
 		var codeFilter = program.for.split(",");
 		
 		var mozillaCertParser = new certMozilla(codeFilter);
-		mozillaCertParser.parse(data,writableStream);
+		mozillaCertParser.parse(data,writableStream,program.format);
 	}
 	
 	writableStream.end();

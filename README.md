@@ -8,7 +8,7 @@ Each of these lists have their own formats, this tool parses the lists provided 
 For example to extract the roots that are trusted for email, code and web from both the EU Trust List and the Mozilla list the command would look like this:
 
 ```
-node tl-create --eutil -mozilla --for 'EMAIL_PROTECTION,CODE_SIGNING' roots.pem
+node tl-create --eutil -mozilla --for 'EMAIL_PROTECTION,CODE_SIGNING' --format pem roots.pem
 ```
 
 
@@ -50,13 +50,21 @@ Valid Mozilla trust purposes
   STEP_UP_APPROVED
 ```
 
+Default used ALL purposes 
+
 How to use
 ```
 cd path/to/your/project/folder
 git clone https://github.com/PeculiarVentures/tl-create.git
 cd src
-node tl-create --eutil -mozilla --for 'EMAIL_PROTECTION,CODE_SIGNING' roots.pem
+node tl-create --eutil -mozilla --for 'EMAIL_PROTECTION,CODE_SIGNING' --format js roots.pem
 ``` 
+Available ouptut format 
+```
+js
+pem
+```
+Default ouput format is 'js' 
 
 ## Bug Reporting
 Please report bugs either as pull requests or as issues in the issue tracker. tl-create has a full disclosure vulnerability policy. Please do NOT attempt to report any security vulnerability in this code privately to anybody.
