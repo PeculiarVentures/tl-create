@@ -356,7 +356,8 @@ program
   .parse(process.argv);
   
 console.log('Parsing started: '+ getDateTime());
-if(program.args[0]) {
+if (!program.args.length) program.help();
+else if(program.args[0]) {
 	var writableStream = fs.createWriteStream(program.args[0]);
 	if (program.eutil) {	
 		console.log('Trust Lists: EUTIL');
@@ -387,8 +388,4 @@ if(program.args[0]) {
 	}
 	
 	writableStream.end();
-}
-else {
-	console.log("output <filename> argument missing");
-	console.log("EX: node tl-create --eutil -mozilla --for 'EMAIL_PROTECTION,CODE_SIGNING' <roots.pem>");
 }
