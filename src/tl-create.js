@@ -354,5 +354,5 @@ if(program.args[0]) {
 }
 else {
 	console.log("output <filename> argument missing");
-	console.log("EX: node tl-create --eutil -mozilla --for 'EMAIL_PROTECTION,CODE_SIGNING' <roots.pem>");	
+	console.log("EX: node tl-create --eutil -mozilla --for 'EMAIL_PROTECTION,CODE_SIGNING' <roots.pem>");
 }

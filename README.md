@@ -1,7 +1,7 @@
 # tl-create
 Node command line tool to create a X.509 trust list from various trust stores
 
-There are various organizations that produce lists of certificates that they believe should be trusted for one thing or another. The most used is the Mozilla [list](http://mxr.mozilla.org/mozilla/source/security/nss/lib/ckfw/builtins/certdata.txt?raw=1) but there are more, such as the Eurpean Union "Trust Service Providers" [list](https://ec.europa.eu/digital-agenda/en/eu-trusted-lists-certification-service-providers).
+There are various organizations that produce lists of certificates that they believe should be trusted for one thing or another. The most used is the Mozilla [list](http://mxr.mozilla.org/mozilla/source/security/nss/lib/ckfw/builtins/certdata.txt?raw=1) but there are more, such as the European Union "Trust Service Providers" [list](https://ec.europa.eu/digital-agenda/en/eu-trusted-lists-certification-service-providers).
 
 Each of these lists have their own formats, this tool parses the lists provided by these other organizations and extracts the certificates that meet the specified criteria (for "email" as an example) and produces a PEM certificate bag these certificates.
 
