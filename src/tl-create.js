@@ -184,7 +184,7 @@ certMozilla.prototype.printCertificte = function(fws,outputFormat) {
 			{
 				isFirstOutput = false;
 				//fws.write('var MozillaTrustedRoots = [\n');
-				fws.write('[\n\"'); 
+				fws.write('var MozillaTrustedRoots =[\''); 
 				//fws.write('"-----BEGIN CERTIFICATE-----" + \n');
 				//fws.write('\n');
 				fws.write(( typeof this.attributes[attrib].CKA_VALUE !== 'undefined'  )?  this.attributes[attrib].CKA_VALUE.value.js  :""  );
@@ -192,16 +192,16 @@ certMozilla.prototype.printCertificte = function(fws,outputFormat) {
 			}
 			else {
 				//fws.write('"-----BEGIN CERTIFICATE-----" + \n');
-				fws.write(',\n\"');
+				fws.write(',\n\'');
 				fws.write( ( typeof this.attributes[attrib].CKA_VALUE !== 'undefined'  )?  this.attributes[attrib].CKA_VALUE.value.js :"" );
 			}
-			fws.write('\"');
+			fws.write('\'');
 			//fws.write('"-----END CERTIFICATE-----",\n' );
 		}
 	}
 	
 	if(outputFormat == "js")
-		fws.write( '];\n\n' ) ;
+		fws.write( '\n];\n\n' ) ;
 };
 
 /*
@@ -257,18 +257,18 @@ certEutl.prototype.parse = function parse(data,fws,outputFormat)
 										else if( outputFormat =="js"){
 											if( isFirstOutput ) {
 												isFirstOutput = false ;
-												fws.write('[\n\"'); 
+												fws.write('var EUTrustedRoots = [\''); 
 												//fws.write('"-----BEGIN CERTIFICATE-----" + \n');
 												fws.write(digitalId[prepareTagName('X509Certificate')][0].replace(/(.{1,*})/g, '$1'));
 												
 											}
 											else {
 												//fws.write(',"-----BEGIN CERTIFICATE-----" + \n');
-												fws.write(',\n\"');
+												fws.write(',\n\'');
 												fws.write(digitalId[prepareTagName('X509Certificate')][0].replace(/(.{1,*})/g, '$1'));
 												//fws.write('\"');
 											}
-											fws.write('\"');
+											fws.write('\'');
 											//fws.write('"-----END CERTIFICATE-----"\n' );
 										
 										}
@@ -282,7 +282,7 @@ certEutl.prototype.parse = function parse(data,fws,outputFormat)
 		});	
 	});
 	if( outputFormat == "js" ) 
-		fws.write("];\n\n");
+		fws.write("\n];\n\n");
 	
 };
 
