@@ -302,6 +302,37 @@ function parseAdditionalInformation  (tspInfo)
 	return parsedInfo ;
 }
 
+/*
+ * Utility functions 
+ * 
+ */
+function getDateTime() {
+
+    var date = new Date();
+
+    var hour = date.getHours();
+    hour = (hour < 10 ? "0" : "") + hour;
+
+    var min  = date.getMinutes();
+    min = (min < 10 ? "0" : "") + min;
+
+    var sec  = date.getSeconds();
+    sec = (sec < 10 ? "0" : "") + sec;
+
+    var year = date.getFullYear();
+
+    var month = date.getMonth() + 1;
+    month = (month < 10 ? "0" : "") + month;
+
+    var day  = date.getDate();
+    day = (day < 10 ? "0" : "") + day;
+
+    return year + ":" + month + ":" + day + ":" + hour + ":" + min + ":" + sec;
+
+}
+
+
+
 /**
  * Module dependencies.
  */
@@ -324,11 +355,12 @@ program
   .option('-o, --format [type]', 'Add the specified type for output format', 'pem')
   .parse(process.argv);
   
-console.log('Parsing started:');
+console.log('Parsing started: '+ getDateTime());
 if(program.args[0]) {
 	var writableStream = fs.createWriteStream(program.args[0]);
 	if (program.eutil) {	
-		console.log('Started parsing  - eutil');
+		console.log('Trust Lists: EUTIL');
+		console.log('Started parsing  - EUTIL '+getDateTime());
 		var data = fs.readFileSync(__dirname + euLocalUrl, {encoding: 'utf-8'});
 		var parser = new xml2js.Parser();
 		parser.parseString(data ,function (err, result) {
@@ -340,14 +372,18 @@ if(program.args[0]) {
 		 		
 		 	euCertParser.parse(result,writableStream,program.format);
 	    });
+	    console.log('Finished parsing  - EUTIL '+getDateTime());
 	}
 	if (program.mozilla) {
-		console.log('Started parsing  - mozilla');
+		//console.log('Started parsing  - mozilla');
+		console.log('Trust Lists: Mozilla');
+		console.log('Started parsing  - Mozilla '+getDateTime());
 		var data = fs.readFileSync(__dirname + mozillaLocalUrl, {encoding: 'utf-8'});
 		var codeFilter = program.for.split(",");
 		
 		var mozillaCertParser = new certMozilla(codeFilter);
 		mozillaCertParser.parse(data,writableStream,program.format);
+		console.log('Finished parsing  - Mozilla '+getDateTime());
 	}
 	
 	writableStream.end();
