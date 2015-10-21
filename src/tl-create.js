@@ -147,7 +147,7 @@ certMozilla.prototype.parseOneCertificate = function() {
 						attrType: res[1],
 						value:  
 						{
-							js:	converted.toString('base64').replace(/(.{1,76})/g, '  "$1\\n" +\n'),
+							js:	converted.toString('base64').replace(/(.{1,*})/g, '$1'),
 							pem: converted.toString('base64').replace(/(.{1,76})/g, '$1\n')
 						} 
 					};
@@ -183,17 +183,20 @@ certMozilla.prototype.printCertificte = function(fws,outputFormat) {
 			if(isFirstOutput)
 			{
 				isFirstOutput = false;
-				fws.write('var MozillaTrustedRoots = [\n'); 
-				fws.write('"-----BEGIN CERTIFICATE-----" + \n');
+				//fws.write('var MozillaTrustedRoots = [\n');
+				fws.write('[\n\"'); 
+				//fws.write('"-----BEGIN CERTIFICATE-----" + \n');
+				//fws.write('\n');
 				fws.write(( typeof this.attributes[attrib].CKA_VALUE !== 'undefined'  )?  this.attributes[attrib].CKA_VALUE.value.js  :""  );
 				
 			}
 			else {
-				fws.write('"-----BEGIN CERTIFICATE-----" + \n');
+				//fws.write('"-----BEGIN CERTIFICATE-----" + \n');
+				fws.write(',\n\"');
 				fws.write( ( typeof this.attributes[attrib].CKA_VALUE !== 'undefined'  )?  this.attributes[attrib].CKA_VALUE.value.js :"" );
 			}
-			
-			fws.write('"-----END CERTIFICATE-----",\n' );
+			fws.write('\"');
+			//fws.write('"-----END CERTIFICATE-----",\n' );
 		}
 	}
 	
@@ -254,16 +257,19 @@ certEutl.prototype.parse = function parse(data,fws,outputFormat)
 										else if( outputFormat =="js"){
 											if( isFirstOutput ) {
 												isFirstOutput = false ;
-												fws.write('var EUTrustedRoots = [\n'); 
-												fws.write('"-----BEGIN CERTIFICATE-----" + \n');
-												fws.write(digitalId[prepareTagName('X509Certificate')][0].replace(/(.{1,76})/g, '  "$1\\n" +\n'));
+												fws.write('[\n\"'); 
+												//fws.write('"-----BEGIN CERTIFICATE-----" + \n');
+												fws.write(digitalId[prepareTagName('X509Certificate')][0].replace(/(.{1,*})/g, '$1'));
 												
 											}
 											else {
-												fws.write(',"-----BEGIN CERTIFICATE-----" + \n');
-												fws.write(digitalId[prepareTagName('X509Certificate')][0].replace(/(.{1,76})/g, '  "$1\\n" +\n'));
+												//fws.write(',"-----BEGIN CERTIFICATE-----" + \n');
+												fws.write(',\n\"');
+												fws.write(digitalId[prepareTagName('X509Certificate')][0].replace(/(.{1,*})/g, '$1'));
+												//fws.write('\"');
 											}
-											fws.write('"-----END CERTIFICATE-----"\n' );
+											fws.write('\"');
+											//fws.write('"-----END CERTIFICATE-----"\n' );
 										
 										}
 									}
@@ -350,4 +356,3 @@ else {
 	console.log("output <filename> argument missing");
 	console.log("EX: node tl-create --eutil -mozilla --for 'EMAIL_PROTECTION,CODE_SIGNING' <roots.pem>");	
 }
-

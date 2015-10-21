@@ -10,6 +10,7 @@
   "dependencies": {
     "commander": "^2.9.0",
     "fs": "0.0.2",
+    "sync-request": "^2.1.0",
     "util": "^0.10.3",
     "xml2js": "^0.4.13"
   },
