@@ -147,7 +147,7 @@ certMozilla.prototype.parseOneCertificate = function() {
 						attrType: res[1],
 						value:  
 						{
-							js:  converted.toString('base64'), '  "$1\\n" +\n'),
+							js:  converted.toString('base64'),
 							pem: converted.toString('base64').replace(/(.{1,76})/g, '$1\n')
 						} 
 					};
