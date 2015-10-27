@@ -168,7 +168,7 @@ certMozilla.prototype.parseOneCertificate = function() {
 
 certMozilla.prototype.printCertificte = function(fws,outputFormat) {
 	
-	var isFirstOutput = true ;
+	
 	for(var attrib in this.attributes ) {
 		if( outputFormat == "pem"){
 			fws.write( "Operator: "+ this.attributes[attrib].CKA_LABEL.value +"\n");
@@ -184,24 +184,24 @@ certMozilla.prototype.printCertificte = function(fws,outputFormat) {
 			{
 				isFirstOutput = false;
 				//fws.write('var MozillaTrustedRoots = [\n');
-				fws.write('var MozillaTrustedRoots =[\''); 
+				//fws.write('var MozillaTrustedRoots =[\''); 
 				//fws.write('"-----BEGIN CERTIFICATE-----" + \n');
 				//fws.write('\n');
-				fws.write(( typeof this.attributes[attrib].CKA_VALUE !== 'undefined'  )?  this.attributes[attrib].CKA_VALUE.value.js  :""  );
+				fws.write('\''+(( typeof this.attributes[attrib].CKA_VALUE !== 'undefined'  )?  this.attributes[attrib].CKA_VALUE.value.js  :'' ) );
 				
 			}
 			else {
 				//fws.write('"-----BEGIN CERTIFICATE-----" + \n');
 				fws.write(',\n\'');
-				fws.write( ( typeof this.attributes[attrib].CKA_VALUE !== 'undefined'  )?  this.attributes[attrib].CKA_VALUE.value.js :"" );
+				fws.write( ( typeof this.attributes[attrib].CKA_VALUE !== 'undefined'  )?  this.attributes[attrib].CKA_VALUE.value.js :'' );
 			}
 			fws.write('\'');
 			//fws.write('"-----END CERTIFICATE-----",\n' );
 		}
 	}
 	
-	if(outputFormat == "js")
-		fws.write( '\n];\n\n' ) ;
+	//if(outputFormat == "js")
+		//fws.write( '\n];\n\n' ) ;
 };
 
 /*
@@ -216,9 +216,22 @@ function certEutl () {
 
 
 
-certEutl.prototype.parse = function parse(data,fws,outputFormat)
+certEutl.prototype.parseTL = function (data,fws,outputFormat)
 {
-	var isFirstOutput = true ;
+	
+	
+	//console.log(prepareTagName('TrustServiceStatusList'));
+	//console.dir(data[prepareTagName('TrustServiceStatusList]);
+	if( typeof data[prepareTagName('TrustServiceStatusList')]== 'undefined') {
+		console.log(data);
+		return ;
+	}
+	if( typeof data[prepareTagName('TrustServiceStatusList')][prepareTagName('TrustServiceProviderList')] == 'undefined') {
+		console.log("TrustServiceProviderList not found");
+		return ;
+	}
+		
+	
 	data[ prepareTagName('TrustServiceStatusList') ][prepareTagName('TrustServiceProviderList')].forEach(function (trustServiceProviderList) {
 	
 		trustServiceProviderList[prepareTagName('TrustServiceProvider')].forEach(function(trustServiceProvider) {
@@ -257,9 +270,9 @@ certEutl.prototype.parse = function parse(data,fws,outputFormat)
 										else if( outputFormat =="js"){
 											if( isFirstOutput ) {
 												isFirstOutput = false ;
-												fws.write('var EUTrustedRoots = [\''); 
+												//fws.write('var EUTrustedRoots = [\''); 
 												//fws.write('"-----BEGIN CERTIFICATE-----" + \n');
-												fws.write(digitalId[prepareTagName('X509Certificate')][0].replace(/(.{1,*})/g, '$1'));
+												fws.write('\''+digitalId[prepareTagName('X509Certificate')][0].replace(/(.{1,*})/g, '$1'));
 												
 											}
 											else {
@@ -281,8 +294,60 @@ certEutl.prototype.parse = function parse(data,fws,outputFormat)
 			};
 		});	
 	});
-	if( outputFormat == "js" ) 
-		fws.write("\n];\n\n");
+	//if( outputFormat == "js" && !isFirstOutput ) 
+	//	fws.write("\n];\n\n");
+	
+	
+};
+
+
+certEutl.prototype.parsePointToOtherTsl = function (data,fws,outputFormat) {
+		
+	if( typeof data[ ('TrustServiceStatusList') ] == 'undefined')
+		return ;
+
+	var otherTslList = data[ ('TrustServiceStatusList') ][('SchemeInformation')][0][('PointersToOtherTSL')][0][('OtherTSLPointer')];
+	//####
+	//nodejs bug if not set generate error for some https link #list not updated
+	//###
+	process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";	
+	
+	for(var i in otherTslList ) {
+		
+		var tlLocation = otherTslList[i][('TSLLocation')][0] ;
+		
+		if( tlLocation.match(/.*\.xml$/g) ){
+		
+			
+			console.log("##############");
+			console.log("##Now processing : "+ tlLocation);
+			console.log("##############");
+			try{
+				var res = request('GET', tlLocation, {'timeout':10000,'retry':true} ) ;	
+			}catch(e){
+				console.log(e.toString());
+			}
+			
+			var tslBody = res.body.toString('utf-8') ;
+			var parser = new xml2js.Parser();
+			var parsedObj ; 
+			//console.log(res.statusCode);
+			//console.log(tslBody);
+			parser.parseString(tslBody ,function (err, result) {
+				 
+				if( typeof result['TrustServiceStatusList'] !=='undefined' ) {
+			 			prefix = "";	
+			 	}
+			 	else {
+			 		prefix = "tsl:";
+			 	}
+			 	parsedObj = result ;
+					
+			});
+			
+			this.parseTL(parsedObj,fws,outputFormat);
+		}					
+	}
 	
 };
 
@@ -290,7 +355,7 @@ function prepareTagName (name) {
 	return prefix+name ;
 };
 
-function parseAdditionalInformation  (tspInfo)
+function parseAdditionalInformation (tspInfo)
 {
 	var parsedInfo =  {country: "" , serviceProviderName:"" };
 	tspInfo[prepareTagName('TSPName')][0][ prepareTagName('Name')].forEach(function(name) {
@@ -340,12 +405,18 @@ function getDateTime() {
 var program = require('commander');
 var util = require('util');
 var xml2js = require('xml2js');
+var request = require('sync-request');
+//var XmlStream = require('xml-stream');
+//var http = require("http");
+//var httpsync = require('httpsync');
+//var needle = require('needle');
 var fs = require('fs');
 var prefix = "tsl:";//user by eutil 
-var euLocalUrl = "/../data/currenttl.xml";
+var euLocalUrl = "/../data/EUTrustedListsofCertificationServiceProvidersXML.xml";
 var euUrl = "";
 var mozillaUrl = "http://mxr.mozilla.org/mozilla/source/security/nss/lib/ckfw/builtins/certdata.txt?raw=1";
 var mozillaLocalUrl = "/../data/certdata.txt";
+var isFirstOutput = true ;
 
 program
   .version('0.0.1')
@@ -359,6 +430,10 @@ console.log('Parsing started: '+ getDateTime());
 if (!program.args.length) program.help();
 else if(program.args[0]) {
 	var writableStream = fs.createWriteStream(program.args[0]);
+	
+	if(program.format=='js')
+		writableStream.write('var TrustedRoots = [ ') ;
+	
 	if (program.eutil) {	
 		console.log('Trust Lists: EUTIL');
 		console.log('Started parsing  - EUTIL '+getDateTime());
@@ -366,17 +441,17 @@ else if(program.args[0]) {
 		var parser = new xml2js.Parser();
 		parser.parseString(data ,function (err, result) {
 		 	var euCertParser = new certEutl();
-		 	
 		 	if( typeof result['TrustServiceStatusList'] !=='undefined' ) {
-		 			prefix = "";	
-		 	}
-		 		
-		 	euCertParser.parse(result,writableStream,program.format);
+			 			prefix = "";	
+			 }
+		 	
+		 	euCertParser.parsePointToOtherTsl(result,writableStream,program.format);
+		 	
 	    });
-	    console.log('Finished parsing  - EUTIL '+getDateTime());
+	    console.log('Finished parsing  - EUTL '+getDateTime());
 	}
 	if (program.mozilla) {
-		//console.log('Started parsing  - mozilla');
+		
 		console.log('Trust Lists: Mozilla');
 		console.log('Started parsing  - Mozilla '+getDateTime());
 		var data = fs.readFileSync(__dirname + mozillaLocalUrl, {encoding: 'utf-8'});
@@ -386,6 +461,7 @@ else if(program.args[0]) {
 		mozillaCertParser.parse(data,writableStream,program.format);
 		console.log('Finished parsing  - Mozilla '+getDateTime());
 	}
-	
+	if(program.format=='js')
+		writableStream.write(" ];");
 	writableStream.end();
 }
