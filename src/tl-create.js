@@ -239,7 +239,7 @@ certEutl.prototype.parseTL = function (data,fws,outputFormat)
 			var addInfo = parseAdditionalInformation( tspInfo[0] );
 			
 			tspServiceList = trustServiceProvider[ prepareTagName('TSPServices')];
-			//console.dir(tspServiceList );
+			
 			for( var tspServiceInd in tspServiceList) {
 				tspService = tspServiceList[tspServiceInd ];
 				//console.log(tspService[prepareTagName('TSPService')][0][prepareTagName('ServiceInformation')][0][prepareTagName('ServiceTypeIdentifier')]);
@@ -249,11 +249,11 @@ certEutl.prototype.parseTL = function (data,fws,outputFormat)
 				matchedStrCAQC = serviceTypeIdentifier.toString().match(/.*(CA\/QC)/g);
 				NationalRootCAQC = serviceTypeIdentifier.toString().match(/.*(NationalRootCA-QC)/g);
 				matchedStrCAPKC = serviceTypeIdentifier.toString().match(/.*(CA\/PKC)/g);
-				if( matchedStrCAQC != null  || NationalRootCAQC !=null || matchedStrCAPKC != null ) {
+				if( matchedStrCAQC !== null  || NationalRootCAQC !== null || matchedStrCAPKC !== null ) {
 					//console.log(serviceInfo[prepareTagName('ServiceStatus')]);
 					serviceStatus = serviceInfo[prepareTagName('ServiceStatus')][0].toString().match(/.*(TrustedList\/Svcstatus\/accredited)/g);
 					//console.log(serviceStatus );
-					if( serviceStatus != null ) {
+					if( serviceStatus !== null ) {
 						for( var ind in serviceInfo[prepareTagName('ServiceDigitalIdentity')] ) {
 								serviceIdent = serviceInfo[prepareTagName('ServiceDigitalIdentity')][ind];							
 								serviceIdent[prepareTagName('DigitalId')].forEach(function(digitalId) {
@@ -290,22 +290,19 @@ certEutl.prototype.parseTL = function (data,fws,outputFormat)
 						}
 					}
 				} 
-			};
+			}
 		});	
 	});
-	//if( outputFormat == "js" && !isFirstOutput ) 
-	//	fws.write("\n];\n\n");
-	
 	
 };
 
 
 certEutl.prototype.parsePointToOtherTsl = function (data,fws,outputFormat) {
 		
-	if( typeof data[ ('TrustServiceStatusList') ] == 'undefined')
+	if( typeof data[ prepareTagName('TrustServiceStatusList') ] == 'undefined')
 		return ;
 
-	var otherTslList = data[ ('TrustServiceStatusList') ][('SchemeInformation')][0][('PointersToOtherTSL')][0][('OtherTSLPointer')];
+	var otherTslList = data[ prepareTagName('TrustServiceStatusList') ][prepareTagName('SchemeInformation')][0][prepareTagName('PointersToOtherTSL')][0][prepareTagName('OtherTSLPointer')];
 	//####
 	//nodejs bug if not set generate error for some https link #list not updated
 	//###
@@ -313,16 +310,16 @@ certEutl.prototype.parsePointToOtherTsl = function (data,fws,outputFormat) {
 	
 	for(var i in otherTslList ) {
 		
-		var tlLocation = otherTslList[i][('TSLLocation')][0] ;
+		var tlLocation = otherTslList[i][prepareTagName('TSLLocation')][0] ;
 		
 		if( tlLocation.match(/.*\.xml$/g) ){
 		
-			
 			console.log("##############");
 			console.log("##Now processing : "+ tlLocation);
 			console.log("##############");
+			var res;
 			try{
-				var res = request('GET', tlLocation, {'timeout':10000,'retry':true,'headers': {'user-agent': 'nodejs'}} ) ;	
+				res = request('GET', tlLocation, {'timeout':10000,'retry':true,'headers': {'user-agent': 'nodejs'}} ) ;	
 			}catch(e){
 				console.log(e.toString());
 			}
@@ -332,9 +329,10 @@ certEutl.prototype.parsePointToOtherTsl = function (data,fws,outputFormat) {
 			var parsedObj ; 
 			//console.log(res.statusCode);
 			//console.log(tslBody);
+			
 			parser.parseString(tslBody ,function (err, result) {
 				 
-				if( typeof result['TrustServiceStatusList'] !=='undefined' ) {
+				if( typeof result[prepareTagName('TrustServiceStatusList')] !=='undefined' ) {
 			 			prefix = "";	
 			 	}
 			 	else {
@@ -352,7 +350,7 @@ certEutl.prototype.parsePointToOtherTsl = function (data,fws,outputFormat) {
 
 function prepareTagName (name) {
 	return prefix+name ;
-};
+}
 
 function parseAdditionalInformation (tspInfo)
 {
@@ -481,7 +479,7 @@ else if(program.args[0]) {
 			var parser = new xml2js.Parser();
 			parser.parseString(data ,function (err, result) {
 		 		var euCertParser = new certEutl();
-		 		if( typeof result['TrustServiceStatusList'] !=='undefined' ) {
+		 		if( typeof result[prepareTagName('TrustServiceStatusList')] !=='undefined' ) {
 			 		prefix = "";	
 			 	}
 		 		euCertParser.parsePointToOtherTsl(result,writableStream,program.format);
