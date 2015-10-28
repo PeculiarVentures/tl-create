@@ -218,10 +218,7 @@ function certEutl () {
 
 certEutl.prototype.parseTL = function (data,fws,outputFormat)
 {
-	
-	
-	//console.log(prepareTagName('TrustServiceStatusList'));
-	//console.dir(data[prepareTagName('TrustServiceStatusList]);
+
 	if( typeof data[prepareTagName('TrustServiceStatusList')]== 'undefined') {
 		return ;
 	}
@@ -230,11 +227,12 @@ certEutl.prototype.parseTL = function (data,fws,outputFormat)
 		return ;
 	}
 		
+	var totlaCertFound =0 ;
 	
 	data[ prepareTagName('TrustServiceStatusList') ][prepareTagName('TrustServiceProviderList')].forEach(function (trustServiceProviderList) {
 	
 		trustServiceProviderList[prepareTagName('TrustServiceProvider')].forEach(function(trustServiceProvider) {
-			
+			totlaCertFound ++;		
 			tspInfo = trustServiceProvider[ prepareTagName('TSPInformation')];
 			var addInfo = parseAdditionalInformation( tspInfo[0] );
 			
@@ -294,57 +292,72 @@ certEutl.prototype.parseTL = function (data,fws,outputFormat)
 		});	
 	});
 	
+	console.log( totlaCertFound + " Certificate Found" );
+	
 };
 
 
 certEutl.prototype.parsePointToOtherTsl = function (data,fws,outputFormat) {
 		
-	if( typeof data[ prepareTagName('TrustServiceStatusList') ] == 'undefined')
+	if( typeof data[ ('TrustServiceStatusList') ] == 'undefined')
 		return ;
 
-	var otherTslList = data[ prepareTagName('TrustServiceStatusList') ][prepareTagName('SchemeInformation')][0][prepareTagName('PointersToOtherTSL')][0][prepareTagName('OtherTSLPointer')];
+	var otherTslList = data[ ('TrustServiceStatusList') ][('SchemeInformation')][0][('PointersToOtherTSL')][0][('OtherTSLPointer')];
 	//####
-	//nodejs bug if not set generate error for some https link #list not updated
+	//for nodejs required. if not set generate error for some https link. mostlikely nodejs's trust list not updated
 	//###
 	process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";	
 	
 	for(var i in otherTslList ) {
 		
-		var tlLocation = otherTslList[i][prepareTagName('TSLLocation')][0] ;
+		var tlLocation = otherTslList[i][('TSLLocation')][0] ;
 		
+		totalRootCount++;
 		if( tlLocation.match(/.*\.xml$/g) ){
+			
+			var territory;
+			otherTslList[i]['AdditionalInformation'][0]['OtherInformation'].forEach( function (addOtherInfo){
+				if( typeof addOtherInfo['SchemeTerritory'] !== 'undefined' ) {
+					console.log("\n");
+					console.log("### Processing : " +addOtherInfo['SchemeTerritory']);
+					console.log("Started : " + getDateTime() ) ;
+				}
+			});
+			
+			
 		
-			console.log("##############");
-			console.log("##Now processing : "+ tlLocation);
-			console.log("##############");
 			var res;
 			try{
 				res = request('GET', tlLocation, {'timeout':10000,'retry':true,'headers': {'user-agent': 'nodejs'}} ) ;	
+				var tslBody = res.body.toString('utf-8') ;
+				var parser = new xml2js.Parser();
+				var parsedObj ;
+				parsedRootCount++;
+				parser.parseString(tslBody ,function (err, result) {
+					 
+					if( typeof result[('TrustServiceStatusList')] !=='undefined' ) {
+				 			prefix = "";	
+				 	}
+				 	else {
+				 		prefix = "tsl:";
+				 	}
+				 	parsedObj = result ;	
+				});
+				this.parseTL(parsedObj,fws,outputFormat);
+				
 			}catch(e){
+				errorParsedRootCount++;
 				console.log(e.toString());
 			}
-			
-			var tslBody = res.body.toString('utf-8') ;
-			var parser = new xml2js.Parser();
-			var parsedObj ; 
-			//console.log(res.statusCode);
-			//console.log(tslBody);
-			
-			parser.parseString(tslBody ,function (err, result) {
-				 
-				if( typeof result[prepareTagName('TrustServiceStatusList')] !=='undefined' ) {
-			 			prefix = "";	
-			 	}
-			 	else {
-			 		prefix = "tsl:";
-			 	}
-			 	parsedObj = result ;
-					
-			});
-			
-			this.parseTL(parsedObj,fws,outputFormat);
-		}					
+			console.log("Ended : " + getDateTime() ) ;
+		}
+		else {
+			totalRootsSkip++;
+		}
+							
 	}
+	
+	
 	
 };
 
@@ -403,10 +416,6 @@ var program = require('commander');
 var util = require('util');
 var xml2js = require('xml2js');
 var request = require('sync-request');
-//var XmlStream = require('xml-stream');
-//var http = require("http");
-//var httpsync = require('httpsync');
-//var needle = require('needle');
 var fs = require('fs');
 var prefix = "tsl:";//user by eutil 
 var euLocalUrl = "/../data/EUTrustedListsofCertificationServiceProvidersXML.xml";
@@ -414,6 +423,10 @@ var euUrl = "http://ec.europa.eu/information_society/newsroom/cf/dae/document.cf
 var mozillaUrl = "http://mxr.mozilla.org/mozilla/source/security/nss/lib/ckfw/builtins/certdata.txt?raw=1";
 var mozillaLocalUrl = "/../data/certdata.txt";
 var isFirstOutput = true ;
+var totalRootCount =0 ;
+var parsedRootCount = 0;
+var errorParsedRootCount = 0;
+var totalRootsSkip = 0;
 
 program
   .version('0.0.1')
@@ -479,16 +492,19 @@ else if(program.args[0]) {
 			var parser = new xml2js.Parser();
 			parser.parseString(data ,function (err, result) {
 		 		var euCertParser = new certEutl();
-		 		if( typeof result[prepareTagName('TrustServiceStatusList')] !=='undefined' ) {
-			 		prefix = "";	
-			 	}
+		 		//if( typeof result[prepareTagName('TrustServiceStatusList')] ==='undefined' ) {
+			 	//	prefix = "";	
+			 	//}
 		 		euCertParser.parsePointToOtherTsl(result,writableStream,program.format);
 	    	});
-	    	console.log('Finished parsing  - EUTL '+getDateTime());	
+	    	console.log('\n\nFinished parsing  - EUTL '+getDateTime());	
+	    	console.log("Total Roots Found :" + totalRootCount);
+			console.log("Total Roots Parse Success :" + parsedRootCount);
+			console.log("Total Roots Parse Error :" + errorParsedRootCount);
+			console.log("Total Roots Skips :" + totalRootsSkip);
 		}catch(e){
 			console.log(e.toString());
 		}	
-		//var tslBody = res.body.toString('utf-8') ;
 		
 	}
 	if (program.mozilla) {
