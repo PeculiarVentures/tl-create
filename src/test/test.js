@@ -16,5 +16,7 @@ console.log( HttpClient({
 }).finish().body.read(null).decodeToString());
 */
 var request = require('sync-request');
-var res = request('GET', 'http://www.tscheme.org/UK_TSL/TSL-UKsigned.xml');
+var res = request('GET', 'http://ec.europa.eu/information_society/newsroom/cf/dae/document.cfm?doc_id=1789',{'headers': {
+    'user-agent': 'nodejs'
+  }});
 console.log(res.body.toString('utf-8'));
