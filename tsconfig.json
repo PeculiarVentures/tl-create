@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "es5",
+        "noImplicitAny": true,
+        "sourceMap": false,
+        "outFile": "built/tl-create.js"
+    },
+    "files": [
+        "typings/tsd.d.ts",
+        "src/utils.ts",
+        "src/formats/mozilla.ts",
+        "src/formats/eutl.ts",
+        "src/tl.ts",
+        "src/export.ts"
+    ]
+}

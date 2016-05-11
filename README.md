@@ -67,14 +67,20 @@ Available ouptut format
 js
 pem
 ```
-Default ouput format is 'js' 
+Default ouput format is 'js'
+
+## Install
+
+```
+
+``` 
 
 ## Bug Reporting
 Please report bugs either as pull requests or as issues in the issue tracker. tl-create has a full disclosure vulnerability policy. Please do NOT attempt to report any security vulnerability in this code privately to anybody.
 
 ## TODO
 * Add the [Microsoft Root Program](http://technet.microsoft.com/en-us/library/cc751157.aspx)
-* Add the [Apple Root Prorgam](http://www.apple.com/certificateauthority/ca_program.html)
+* Add the [Apple Root Progam](http://www.apple.com/certificateauthority/ca_program.html)
 * Add the [Adobe Root Program](http://trustlist.adobe.com/eutl12.acrobatsecuritysettings)
 * Add the [Oracle Root Program](http://www.oracle.com/technetwork/java/javase/javasecarootcertsprogram-1876540.html)
 
