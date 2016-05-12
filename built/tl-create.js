@@ -320,9 +320,17 @@ var tl_create;
                 this.SchemaInformation = new SchemeInformation();
                 var i = this.NextElementPos(value.childNodes, 0, XmlTrustServiceStatusList.ElementNames.SchemeInformation, XmlTrustServiceStatusList.NamespaceURI, true);
                 this.SchemaInformation.LoadXml(value.childNodes[i]);
+                this.m_element = value;
             }
             else
                 throw new Error("Wrong XML element");
+        };
+        TrustServiceStatusList.prototype.CheckSignature = function () {
+            var xmlSignature = this.m_element.getElementsByTagNameNS(xadesjs.XmlSignature.NamespaceURI, "Signature");
+            // TODO: change this.m_element.ownerDocument -> this.m_element after xadesjs fix;
+            var sxml = new xadesjs.SignedXml(this.m_element.ownerDocument);
+            sxml.LoadXml(xmlSignature[0]);
+            return sxml.CheckSignature();
         };
         return TrustServiceStatusList;
     }(XmlObject));
@@ -549,6 +557,10 @@ var tl_create;
         TrustedList.prototype.concat = function (tl) {
             if (tl)
                 this.m_certificates = this.Certificates.concat(tl.Certificates);
+            return this;
+        };
+        TrustedList.prototype.filter = function (callbackfn, thisArg) {
+            this.m_certificates = this.Certificates.filter(callbackfn);
             return this;
         };
         TrustedList.prototype.toString = function () {

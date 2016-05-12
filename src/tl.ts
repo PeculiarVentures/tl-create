@@ -36,6 +36,11 @@ namespace tl_create {
             return this;
         }
 
+        filter(callbackfn: (value: X509Certificate, index: number, array: X509Certificate[]) => boolean, thisArg?: any): TrustedList {
+            this.m_certificates = this.Certificates.filter(callbackfn);
+            return this;
+        }
+
         toString(): string {
             let res: string[] = [];
 

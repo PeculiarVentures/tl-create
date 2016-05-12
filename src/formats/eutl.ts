@@ -102,6 +102,8 @@ namespace tl_create {
 
     export class TrustServiceStatusList extends XmlObject {
 
+        protected m_element: Element;
+
         Id: string = null;
         TSLTag: string = null;
         SchemaInformation: SchemeInformation = null;
@@ -124,10 +126,23 @@ namespace tl_create {
 
                 let i = this.NextElementPos(value.childNodes, 0, XmlTrustServiceStatusList.ElementNames.SchemeInformation, XmlTrustServiceStatusList.NamespaceURI, true);
                 this.SchemaInformation.LoadXml(value.childNodes[i] as Element);
+
+                this.m_element = value as Element;
             }
             else
                 throw new Error("Wrong XML element");
         }
+
+        CheckSignature(): PromiseLike<boolean> {
+
+            let xmlSignature = this.m_element.getElementsByTagNameNS(xadesjs.XmlSignature.NamespaceURI, "Signature");
+
+            // TODO: change this.m_element.ownerDocument -> this.m_element after xadesjs fix;
+            let sxml = new xadesjs.SignedXml(this.m_element.ownerDocument);
+            sxml.LoadXml(xmlSignature[0]);
+            return sxml.CheckSignature();
+        }
+
     }
 
     class SchemeInformation extends XmlObject {

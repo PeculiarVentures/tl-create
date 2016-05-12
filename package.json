@@ -12,6 +12,7 @@
   "license": "MIT",
   "dependencies": {
     "commander": "^2.9.0",
+    "node-webcrypto-ossl": "^1.0.2",
     "sync-request": "^3.0.1",
     "xadesjs": "^1.0.0"
   },

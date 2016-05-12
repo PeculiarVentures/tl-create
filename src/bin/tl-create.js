@@ -6,6 +6,8 @@ var request = require('sync-request');
 global.xadesjs = require('xadesjs');
 global.DOMParser = require('xmldom').DOMParser;
 global.XMLSerializer = require('xmldom').XMLSerializer;
+var WebCrypto = require("node-webcrypto-ossl").default;
+xadesjs.Application.setEngine("OpenSSL", new WebCrypto());
 var tl_create = require('../../built/tl-create.js');
 var fs = require('fs');
 var prefix = "tsl:";//user by eutil 
@@ -101,6 +103,16 @@ function parseEUTL() {
     var data = getRemoteTL(euUrl);
     var eutl = new tl_create.EUTL();
     var tl = eutl.parse(data);
+    eutl.TrustServiceStatusList.CheckSignature()
+        .then(function (verify) {
+            if (!verify)
+                console.log("Warning!!!: EUTL signature is not valid");
+            else
+                console.log("Information: EUTL signature is valid");
+        })
+        .catch(function (e) {
+            console.log("Error:", e.message);
+        });
     return tl;
 }
 
@@ -110,6 +122,30 @@ function parseMozilla() {
     var moz = new tl_create.Mozilla();
     var tl = moz.parse(data);
     return tl;
+}
+
+function jsonToPKIJS(json) {
+    var _pkijs = [];
+    for (var i in json) {
+        var raw = json[i].raw;
+        if (raw)
+            _pkijs.push(raw);
+    }
+    return _pkijs;
+}
+
+// prepare --for
+var filter = program.for.split(",");
+
+function trustFilter(item, index) {
+    if (item.source !== "Mozilla")
+        return true;
+    for (var i in filter) {
+        var f = filter[i];
+        if (item.trust.indexOf(f) !== -1)
+            return true;
+    }
+    return false;
 }
 
 if (!program.args.length) program.help();
@@ -125,7 +161,7 @@ else if (program.args[0]) {
         try {
             eutlTL = parseEUTL();
         } catch (e) {
-            console.log(e.toString());
+            console.log(e.toString(), e.stack);
         }
 
     }
@@ -143,10 +179,28 @@ else if (program.args[0]) {
     else
         tl = mozTL ? mozTL : eutlTL;
 
-    if (program.format == 'js')
-        writableStream.write(JSON.stringify(tl));
-    else
-        writableStream.write(tl.toString());
+    // Filter data
+    if (filter.indexOf("ALL") === -1) {
+        console.log("Filter:");
+        console.log("    Incoming data: " + tl.Certificates.length + " certificates");
+        tl.filter(trustFilter);
+        console.log("    Filtered data: " + tl.Certificates.length + " certificates");
+    }
+
+    switch ((program.format || "pem").toLowerCase()) {
+        case "js":
+            console.log("Output format: JS");
+            writableStream.write(JSON.stringify(tl));
+            break;
+        case "pkijs":
+            console.log("Output format: PKIJS");
+            var _pkijs = jsonToPKIJS(tl.toJSON());
+            writableStream.write(JSON.stringify(_pkijs));
+            break;
+        default: // pem
+            console.log("Output format: PEM");
+            writableStream.write(tl.toString());
+    }
 
     writableStream.end();
 }
