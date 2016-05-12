@@ -72,8 +72,16 @@ Default ouput format is 'js'
 ## Install
 
 ```
-
+git clone https://github.com/PeculiarVentures/tl-create.git
+cd tl-create
+npm install -g
 ``` 
+
+## Run
+
+```
+tl-create --mozilla --format pem roots.pem
+```
 
 ## Bug Reporting
 Please report bugs either as pull requests or as issues in the issue tracker. tl-create has a full disclosure vulnerability policy. Please do NOT attempt to report any security vulnerability in this code privately to anybody.
