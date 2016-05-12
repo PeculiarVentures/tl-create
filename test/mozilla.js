@@ -4,14 +4,13 @@
 var xadesjs = require("xadesjs");
 global.xadesjs = xadesjs;
 var tl_create = require("../built/tl-create");
-console.log("tl_createt", tl_create);
 var assert = require("assert");
 
 var fs = require("fs");
 
 describe("Mozilla format", function () {
 
-    it("Test 1", function () {
+    it("Parse incoming text", function () {
         // get static file
         var mozText = fs.readFileSync("./test/static/mozilla.txt", "utf8");
 
@@ -19,6 +18,6 @@ describe("Mozilla format", function () {
         var tl = moz.parse(mozText);
         
         assert.equal(tl.Certificates.length, 177);
-    })
+    });
 
 })

@@ -58,6 +58,7 @@ Valid Mozilla trust purposes
 Available ouptut format 
 ```
 js
+pkijs
 pem
 ```
 Default ouput format is 'js'
