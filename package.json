@@ -15,8 +15,12 @@
     "node-webcrypto-ossl": "^1.0.2",
     "sync-request": "^3.0.1",
     "xadesjs": "^1.0.0"
+    "typescript": "latest",
+    "tsd": "latest"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "mocha": "latest"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/PeculiarVentures/tl-create.git"
