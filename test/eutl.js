@@ -4,6 +4,8 @@
 global.DOMParser = require("xmldom").DOMParser;
 var xadesjs = require("xadesjs");
 global.xadesjs = xadesjs;
+var WebCrypto = require("node-webcrypto-ossl").default;
+xadesjs.Application.setEngine("OpenSSL", new WebCrypto());
 var tl_create = require("../built/tl-create");
 var assert = require("assert");
 
