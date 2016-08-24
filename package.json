@@ -1,33 +1,31 @@
 {
-	"name": "tl-create",
-	"version": "1.1.0",
-	"main": "built/tl-create.js",
-	"scripts": {
-		"test": "mocha test"
-	},
-	"bin": {
-		"tl-create": "./src/bin/tl-create.js"
-	},
-	"author": "Asif ur rahman",
-	"license": "MIT",
-	"dependencies": {
-		"commander": "^2.9.0",
-		"node-webcrypto-ossl": "^1.0.2",
-		"sync-request": "^3.0.1",
-		"xadesjs": "latest",
-		"typescript": "latest",
-		"tsd": "latest"
-	},
-	"devDependencies": {
-		"mocha": "latest"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/PeculiarVentures/tl-create.git"
-	},
-	"bugs": {
-		"url": "https://github.com/PeculiarVentures/tl-create/issues"
-	},
-	"homepage": "https://github.com/PeculiarVentures/tl-create#readme",
-	"description": ""
+  "name": "tl-create",
+  "version": "1.1.0",
+  "main": "built/tl-create.js",
+  "scripts": {
+    "test": "mocha test",
+    "build": "typings install && tsc"
+  },
+  "bin": {
+    "tl-create": "./src/bin/tl-create.js"
+  },
+  "author": "Asif ur rahman",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^2.9.0",
+    "node-webcrypto-ossl": "^1.0.7",
+    "sync-request": "^3.0.1",
+    "xadesjs": "https://github.com/PeculiarVentures/xadesjs.git",
+    "xmldom-alpha": "^0.1.23"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PeculiarVentures/tl-create.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PeculiarVentures/tl-create/issues"
+  },
+  "homepage": "https://github.com/PeculiarVentures/tl-create#readme",
+  "description": ""
 }

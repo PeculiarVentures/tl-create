@@ -1,10 +1,10 @@
 /// <reference path="../typings/node/node.d.ts" />
 /// <reference path="../typings/mocha/mocha.d.ts" />
 
-global.DOMParser = require("xmldom").DOMParser;
+global.DOMParser = require("xmldom-alpha").DOMParser;
 var xadesjs = require("xadesjs");
 global.xadesjs = xadesjs;
-var WebCrypto = require("node-webcrypto-ossl").default;
+var WebCrypto = require("node-webcrypto-ossl");
 xadesjs.Application.setEngine("OpenSSL", new WebCrypto());
 var tl_create = require("../built/tl-create");
 var assert = require("assert");

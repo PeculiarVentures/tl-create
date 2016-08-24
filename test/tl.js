@@ -1,6 +1,3 @@
-/// <reference path="../typings/node/node.d.ts" />
-/// <reference path="../typings/mocha/mocha.d.ts" />
-
 var xadesjs = require("xadesjs");
 global.xadesjs = xadesjs;
 var tl_create = require("../built/tl-create");

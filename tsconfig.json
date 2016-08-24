@@ -1,13 +1,13 @@
 {
     "compilerOptions": {
-        "module": "commonjs",
+        "module": "amd",
         "target": "es5",
         "noImplicitAny": true,
         "sourceMap": false,
         "outFile": "built/tl-create.js"
     },
     "files": [
-        "typings/tsd.d.ts",
+        "typings/index.d.ts",
         "src/utils.ts",
         "src/formats/mozilla.ts",
         "src/formats/eutl.ts",
