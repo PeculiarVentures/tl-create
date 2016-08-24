@@ -1,0 +1,8 @@
+{
+    "name": "tl-create",
+    "dependencies": {},
+    "globalDependencies": {
+        "node": "registry:env/node#4.0.0+20160813135048",
+        "xadesjs": "registry:dt/xadesjs#1.0.0+20160509153344"
+    }
+}
