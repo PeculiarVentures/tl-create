@@ -27,5 +27,5 @@
     "url": "https://github.com/PeculiarVentures/tl-create/issues"
   },
   "homepage": "https://github.com/PeculiarVentures/tl-create#readme",
-  "description": ""
+  "description": "Node command line tool to create a X.509 trust list from various trust stores"
 }
