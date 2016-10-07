@@ -15,7 +15,7 @@
     "commander": "^2.9.0",
     "node-webcrypto-ossl": "^1.0.7",
     "sync-request": "^3.0.1",
-    "xadesjs": "https://github.com/PeculiarVentures/xadesjs.git",
+    "xadesjs": "PeculiarVentures/xadesjs",
     "xmldom-alpha": "^0.1.23"
   },
   "devDependencies": {},
