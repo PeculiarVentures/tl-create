@@ -66,13 +66,12 @@ tl-create --eutl --format pem roots.pem
   STEP_UP_APPROVED
 ```
 
+**NOTE**: The default is ALL purposes 
 
 ### Extract all EUTL Roots
 ```
 tl-create --eutl --format pem roots.pem
 ```
-
-**NOTE**: The default is ALL purposes 
 
 ### Available ouptut formats 
 ```
