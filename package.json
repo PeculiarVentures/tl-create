@@ -16,7 +16,10 @@
     "node-webcrypto-ossl": "^1.0.7",
     "sync-request": "^3.0.1",
     "xadesjs": "PeculiarVentures/xadesjs",
-    "xmldom-alpha": "^0.1.23"
+    "xmldom-alpha": "^0.1.23",
+    "temp": "^0.8.3",
+    "node.extend": "^1.1.6",
+    "asn1js": "^1.2.12"
   },
   "devDependencies": {},
   "repository": {
