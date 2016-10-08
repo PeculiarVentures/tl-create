@@ -96,7 +96,7 @@ Please report bugs either as pull requests or as issues in the issue tracker. tl
 
 ## TODO
 * Add the [Apple Root Progam](http://www.apple.com/certificateauthority/ca_program.html)
-* Add the [Adobe Root Program](http://trustlist.adobe.com/eutl12.acrobatsecuritysettings)
+* Add the [Adobe Root Program](http://trustlist.adobe.com/tl12.acrobatsecuritysettings)
 * Add the [Oracle Root Program](http://www.oracle.com/technetwork/java/javase/javasecarootcertsprogram-1876540.html)
 
 ## Related
