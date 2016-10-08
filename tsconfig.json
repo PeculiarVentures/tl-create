@@ -11,6 +11,7 @@
         "src/utils.ts",
         "src/formats/mozilla.ts",
         "src/formats/eutl.ts",
+        "src/formats/ms.ts",
         "src/tl.ts",
         "src/export.ts"
     ]

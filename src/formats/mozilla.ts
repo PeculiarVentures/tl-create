@@ -102,7 +102,8 @@ namespace tl_create {
                     raw: cert[MozillaAttributes.CKA_VALUE],
                     trust: [],
                     operator: cert[MozillaAttributes.CKA_LABEL],
-                    source: "Mozilla"
+                    source: "Mozilla",
+                    evpolicy: []
                 };
                 let ncc = this.findNcc(cert, ncc_trust);
                 // add trust from ncc

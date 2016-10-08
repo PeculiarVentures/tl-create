@@ -5,6 +5,7 @@ namespace tl_create {
         operator: string;
         trust: string[];
         source: string;
+        evpolicy: string[];
     }
 
     export declare type ExportX509CertificateJSON = X509Certificate[];
@@ -47,6 +48,8 @@ namespace tl_create {
             for (let cert of this.Certificates) {
                 res.push("Operator: " + cert.operator);
                 res.push("Source: " + cert.source);
+                if (cert.evpolicy.length > 0)
+                    res.push("EV OIDs: " + cert.evpolicy.join(", "));
                 res.push("-----BEGIN CERTIFICATE-----");
                 res.push(cert.raw);
                 res.push("-----END CERTIFICATE-----");

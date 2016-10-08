@@ -16,7 +16,8 @@ namespace tl_create {
                         raw: cert,
                         trust: pointer.AdditionalInformation.SchemeTypeCommunityRules,
                         operator: pointer.AdditionalInformation.SchemeOperatorName.GetItem("en"),
-                        source: "EUTL"
+                        source: "EUTL",
+                        evpolicy: []
                     });
             return tl;
         }
