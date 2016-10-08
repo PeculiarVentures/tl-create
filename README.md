@@ -46,12 +46,7 @@ tl-create --microsoft --format pem roots.pem
 tl-create --eutl --format pem roots.pem
 ```
 
-### Extract all EUTL Roots
-```
-tl-create --eutl --format pem roots.pem
-```
-
-### Valid Mozilla trust purposes 
+#### Valid Mozilla trust purposes 
 ```
   DIGITAL_SIGNATURE
   NON_REPUDIATION
@@ -69,6 +64,12 @@ tl-create --eutl --format pem roots.pem
   IPSEC_USER
   TIME_STAMPING
   STEP_UP_APPROVED
+```
+
+
+### Extract all EUTL Roots
+```
+tl-create --eutl --format pem roots.pem
 ```
 
 **NOTE**: The default is ALL purposes 
