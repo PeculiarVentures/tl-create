@@ -14,7 +14,7 @@ Each of these lists have their own formats, this tool parses the lists provided 
 For example to extract the roots that are trusted for email, code and web from both the EU Trust List and the Mozilla list the command would look like this:
 
 ```
-tl-create --eutl --mozilla --for 'EMAIL_PROTECTION,CODE_SIGNING' --format pem roots.pem
+node src/bin/tl-create.js --eutl --mozilla --for 'EMAIL_PROTECTION,CODE_SIGNING' --format pem roots.pem
 ```
 
 
@@ -38,12 +38,12 @@ This would produce a file that looked something like this:
 ## Usage
 ### Extract all Microsoft Roots
 ```
-tl-create --microsoft --format pem roots.pem
+node src/bin/tl-create.js --microsoft --format pem roots.pem
 ```
 
 ### Extract all Mozilla Roots
 ```
-tl-create --eutl --format pem roots.pem
+node src/bin/tl-create.js --eutl --format pem roots.pem
 ```
 
 #### Valid Mozilla trust purposes 
@@ -70,7 +70,7 @@ tl-create --eutl --format pem roots.pem
 
 ### Extract all EUTL Roots
 ```
-tl-create --eutl --format pem roots.pem
+node src/bin/tl-create.js --eutl --format pem roots.pem
 ```
 
 ### Available ouptut formats 
