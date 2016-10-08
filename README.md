@@ -35,8 +35,23 @@ This would produce a file that looked something like this:
  ...
  -----END CERTIFICATE-----
 ```
+## Usage
+### Extract all Microsoft Roots
+```
+tl-create --microsoft --format pem roots.pem
+```
 
-Valid Mozilla trust purposes 
+### Extract all Mozilla Roots
+```
+tl-create --eutl --format pem roots.pem
+```
+
+### Extract all EUTL Roots
+```
+tl-create --eutl --format pem roots.pem
+```
+
+### Valid Mozilla trust purposes 
 ```
   DIGITAL_SIGNATURE
   NON_REPUDIATION
@@ -58,13 +73,14 @@ Valid Mozilla trust purposes
 
 **NOTE**: The default is ALL purposes 
 
-Available ouptut format 
+### Available ouptut formats 
 ```
 js
 pkijs
 pem
 ```
-Default ouput format is 'js'
+
+**NOTE**: Default ouput format is 'js'
 
 ## Install
 
