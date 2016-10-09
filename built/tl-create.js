@@ -87,7 +87,8 @@ var tl_create;
                     raw: cert[MozillaAttributes.CKA_VALUE],
                     trust: [],
                     operator: cert[MozillaAttributes.CKA_LABEL],
-                    source: "Mozilla"
+                    source: "Mozilla",
+                    evpolicy: []
                 };
                 var ncc = this.findNcc(cert, ncc_trust);
                 // add trust from ncc
@@ -213,7 +214,8 @@ var tl_create;
                         raw: cert,
                         trust: pointer.AdditionalInformation.SchemeTypeCommunityRules,
                         operator: pointer.AdditionalInformation.SchemeOperatorName.GetItem("en"),
-                        source: "EUTL"
+                        source: "EUTL",
+                        evpolicy: []
                     });
                 }
             }
@@ -532,6 +534,169 @@ var tl_create;
 })(tl_create || (tl_create = {}));
 var tl_create;
 (function (tl_create) {
+    var ctl_schema = new asn1js.org.pkijs.asn1.SEQUENCE({
+        name: "CTL",
+        value: [
+            new asn1js.org.pkijs.asn1.ANY({
+                name: "dummy1"
+            }),
+            new asn1js.org.pkijs.asn1.INTEGER({
+                name: "unknown"
+            }),
+            new asn1js.org.pkijs.asn1.UTCTIME({
+                name: "GenDate"
+            }),
+            new asn1js.org.pkijs.asn1.ANY({
+                name: "dummy2"
+            }),
+            new asn1js.org.pkijs.asn1.SEQUENCE({
+                name: "InnerCTL",
+                value: [
+                    new asn1js.org.pkijs.asn1.REPEATED({
+                        name: "CTLEntry",
+                        value: new asn1js.org.pkijs.asn1.ANY()
+                    })
+                ]
+            })
+        ]
+    });
+    var ctlentry_schema = new asn1js.org.pkijs.asn1.SEQUENCE({
+        name: "CTLEntry",
+        value: [
+            new asn1js.org.pkijs.asn1.OCTETSTRING({
+                name: "CertID"
+            }),
+            new asn1js.org.pkijs.asn1.SET({
+                name: "MetaData",
+                value: [
+                    new asn1js.org.pkijs.asn1.REPEATED({
+                        name: "CertMetaData",
+                        value: new asn1js.org.pkijs.asn1.SEQUENCE({
+                            value: [
+                                new asn1js.org.pkijs.asn1.OID({
+                                    name: "MetaDataType"
+                                }),
+                                new asn1js.org.pkijs.asn1.SET({
+                                    name: "MetaDataValue",
+                                    value: [
+                                        new asn1js.org.pkijs.asn1.OCTETSTRING({
+                                            name: "RealContent"
+                                        })
+                                    ]
+                                })
+                            ]
+                        })
+                    })
+                ]
+            })
+        ]
+    });
+    var eku_schema = new asn1js.org.pkijs.asn1.SEQUENCE({
+        name: "EKU",
+        value: [
+            new asn1js.org.pkijs.asn1.REPEATED({
+                name: "OID",
+                value: new asn1js.org.pkijs.asn1.OID()
+            })
+        ]
+    });
+    var evoid_schema = new asn1js.org.pkijs.asn1.SEQUENCE({
+        name: "EVOIDS",
+        value: [
+            new asn1js.org.pkijs.asn1.REPEATED({
+                name: "PolicyThing",
+                value: new asn1js.org.pkijs.asn1.SEQUENCE({
+                    value: [
+                        new asn1js.org.pkijs.asn1.OID({
+                            name: "EVOID"
+                        }),
+                        new asn1js.org.pkijs.asn1.ANY({
+                            name: "dummy"
+                        })
+                    ]
+                })
+            })
+        ]
+    });
+    var EKU_oids = {
+        "1.3.6.1.5.5.7.3.1": "SERVER_AUTH",
+        "1.3.6.1.5.5.7.3.2": "CLIENT_AUTH",
+        "1.3.6.1.5.5.7.3.3": "CODE_SIGNING",
+        "1.3.6.1.5.5.7.3.4": "EMAIL_PROTECTION",
+        "1.3.6.1.5.5.7.3.5": "IPSEC_END_SYSTEM",
+        "1.3.6.1.5.5.7.3.6": "IPSEC_TUNNEL",
+        "1.3.6.1.5.5.7.3.7": "IPSEC_USER",
+        "1.3.6.1.5.5.7.3.8": "TIME_STAMPING"
+    };
+    var Microsoft = (function () {
+        function Microsoft() {
+        }
+        Microsoft.prototype.parse = function (data) {
+            var tl = new tl_create.TrustedList();
+            var databuf = new Buffer(data, "base64");
+            var variant;
+            for (var i = 0; i < databuf.buffer.byteLength; i++) {
+                variant = asn1js.org.pkijs.verifySchema(databuf.buffer.slice(i), ctl_schema);
+                if (variant.verified === true)
+                    break;
+            }
+            if (variant.verified === false)
+                throw new Error("Cannot parse STL");
+            process.stdout.write("Fetching certificates");
+            for (var _i = 0, _a = variant.result.CTLEntry; _i < _a.length; _i++) {
+                var ctlentry = _a[_i];
+                process.stdout.write(".");
+                var ctlentry_parsed = asn1js.org.pkijs.verifySchema(ctlentry.toBER(), ctlentry_schema);
+                var certid = asn1js.org.pkijs.bufferToHexCodes(ctlentry_parsed.result.CertID.value_block.value_hex);
+                var tl_cert = {
+                    raw: this.fetchcert(certid),
+                    trust: [],
+                    operator: "",
+                    source: "Microsoft",
+                    evpolicy: []
+                };
+                for (var _b = 0, _c = ctlentry_parsed.result.CertMetaData; _b < _c.length; _b++) {
+                    var metadata = _c[_b];
+                    var metadata_oid = metadata.value_block.value[0].value_block.toString();
+                    // Load EKUs
+                    if (metadata_oid === "1.3.6.1.4.1.311.10.11.9") {
+                        var ekus = asn1js.org.pkijs.verifySchema(metadata.value_block.value[1].value_block.value[0].value_block.value_hex, eku_schema);
+                        for (var _d = 0, _e = ekus.result.OID; _d < _e.length; _d++) {
+                            var eku = _e[_d];
+                            var eku_oid = eku.value_block.toString();
+                            if (eku_oid in EKU_oids)
+                                tl_cert.trust.push(EKU_oids[eku_oid]);
+                        }
+                    }
+                    // Load friendly name
+                    if (metadata_oid === "1.3.6.1.4.1.311.10.11.11") {
+                        tl_cert.operator = String.fromCharCode.apply(null, new Uint16Array(metadata.value_block.value[1].value_block.value[0].value_block.value_hex)).slice(0, -1);
+                    }
+                    // Load EV Policy OIDs
+                    if (metadata_oid === "1.3.6.1.4.1.311.10.11.83") {
+                        var evoids = asn1js.org.pkijs.verifySchema(metadata.value_block.value[1].value_block.value[0].value_block.value_hex, evoid_schema);
+                        for (var _f = 0, _g = evoids.result.PolicyThing; _f < _g.length; _f++) {
+                            var evoid = _g[_f];
+                            tl_cert.evpolicy.push(evoid.value_block.value[0].value_block.toString());
+                        }
+                    }
+                }
+                tl.AddCertificate(tl_cert);
+            }
+            console.log();
+            return tl;
+        };
+        Microsoft.prototype.fetchcert = function (certid) {
+            var url = "http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/" + certid + ".crt";
+            var res = request('GET', url, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
+            return res.body.toString('base64');
+        };
+        return Microsoft;
+    }());
+    tl_create.Microsoft = Microsoft;
+})(tl_create || (tl_create = {}));
+var tl_create;
+(function (tl_create) {
     var TrustedList = (function () {
         function TrustedList() {
             this.m_certificates = [];
@@ -569,6 +734,8 @@ var tl_create;
                 var cert = _a[_i];
                 res.push("Operator: " + cert.operator);
                 res.push("Source: " + cert.source);
+                if (cert.evpolicy.length > 0)
+                    res.push("EV OIDs: " + cert.evpolicy.join(", "));
                 res.push("-----BEGIN CERTIFICATE-----");
                 res.push(cert.raw);
                 res.push("-----END CERTIFICATE-----");
