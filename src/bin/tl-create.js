@@ -18,7 +18,7 @@ var fs = require('fs');
 var temp = require('temp').track();
 var path = require('path');
 var child_process = require('child_process');
-var prefix = "tsl:";//user by eutil 
+var prefix = "tsl:";//used by eutl 
 var euUrl = "http://ec.europa.eu/information_society/newsroom/cf/dae/document.cfm?doc_id=1789";
 var mozillaUrl = "http://mxr.mozilla.org/mozilla/source/security/nss/lib/ckfw/builtins/certdata.txt?raw=1";
 var microsoftUrl = "http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab";
@@ -59,7 +59,7 @@ function getDateTime() {
 
 program
     .version('1.1.0')
-    .option('-e, --eutil', 'EU Trust List Parse')
+    .option('-e, --eutl', 'EU Trust List Parse')
     .option('-m, --mozilla', 'Mozilla Trust List Parse')
     .option('-s, --microsoft', 'Microsoft Trust List Parse')
     .option('-f, --for [type]', 'Add the specified type for parse', 'ALL')
@@ -71,8 +71,8 @@ program.on('--help', function () {
     console.log('');
     console.log('    $ tl-create --mozilla --format pem roots.pem');
     console.log('    $ tl-create --mozilla --for "EMAIL_PROTECTION,CODE_SIGNING" --format pem roots.pem');
-    console.log('    $ tl-create --eutil --format pem roots.pem');
-    console.log('    $ tl-create --eutil --format js roots.js');
+    console.log('    $ tl-create --eutl --format pem roots.pem');
+    console.log('    $ tl-create --eutl --format js roots.js');
     console.log('    $ tl-create --microsoft --format pem roots.pem');
     console.log('');
 });
@@ -110,7 +110,7 @@ function getRemoteTL(url) {
 }
 
 function parseEUTL() {
-    console.log("Trust Lists: EUTIL");
+    console.log("Trust Lists: EUTL");
     var data = getRemoteTL(euUrl);
     var eutl = new tl_create.EUTL();
     var tl = eutl.parse(data);
@@ -189,7 +189,7 @@ else if (program.args[0]) {
 
     var eutlTL, mozTL, msTL;
 
-    if (program.eutil) {
+    if (program.eutl) {
         try {
             eutlTL = parseEUTL();
         } catch (e) {
