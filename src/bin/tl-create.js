@@ -220,6 +220,11 @@ else if (program.args[0]) {
     if (msTL)
         tl = msTL.concat(tl);
 
+    if (tl === null) {
+        console.log("Cannot fetch any Trust Lists.");
+        process.exit(1);
+    }
+
     // Filter data
     if (filter.indexOf("ALL") === -1) {
         console.log("Filter:");
