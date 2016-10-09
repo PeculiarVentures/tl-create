@@ -185,7 +185,7 @@ if (!program.args.length) program.help();
 else if (program.args[0]) {
 
     console.log('Parsing started: ' + getDateTime());
-    var writableStream = fs.createWriteStream(program.args[0]);
+    var outputfile = program.args[0];
 
     var eutlTL, mozTL, msTL;
 
@@ -231,21 +231,19 @@ else if (program.args[0]) {
     switch ((program.format || "pem").toLowerCase()) {
         case "js":
             console.log("Output format: JS");
-            writableStream.write(JSON.stringify(tl));
+            fs.writeFileSync(outputfile, JSON.stringify(tl));
             break;
         case "pkijs":
             console.log("Output format: PKIJS");
             var _pkijs = jsonToPKIJS(tl.toJSON());
-            writableStream.write(JSON.stringify(_pkijs));
+            fs.writeFileSync(outputfile, JSON.stringify(_pkijs));
             break;
         case "pem":
             console.log("Output format: PEM");
-            writableStream.write(tl.toString());
+            fs.writeFileSync(outputfile, tl.toString());
             break;
         default:
             console.log("Invalid output format");
             break;
     }
-
-    writableStream.end();
 }
