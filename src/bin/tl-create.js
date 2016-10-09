@@ -238,9 +238,13 @@ else if (program.args[0]) {
             var _pkijs = jsonToPKIJS(tl.toJSON());
             writableStream.write(JSON.stringify(_pkijs));
             break;
-        default: // pem
+        case "pem":
             console.log("Output format: PEM");
             writableStream.write(tl.toString());
+            break;
+        default:
+            console.log("Invalid output format");
+            break;
     }
 
     writableStream.end();
