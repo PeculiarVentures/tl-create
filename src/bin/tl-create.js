@@ -19,7 +19,7 @@ var temp = require('temp').track();
 var path = require('path');
 var child_process = require('child_process');
 var prefix = "tsl:";//used by eutl 
-var euUrl = "http://ec.europa.eu/information_society/newsroom/cf/dae/document.cfm?doc_id=1789";
+var euUrl = "https://ec.europa.eu/information_society/policy/esignature/trusted-list/tl-mp.xml";
 var mozillaUrl = "http://mxr.mozilla.org/mozilla/source/security/nss/lib/ckfw/builtins/certdata.txt?raw=1";
 var microsoftUrl = "http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab";
 var isFirstOutput = true;
