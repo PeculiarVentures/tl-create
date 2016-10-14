@@ -1,3 +1,6 @@
+/// <reference path="asn1js.d.ts" />
+/// <reference path="sync-request.d.ts" />
+
 namespace tl_create {
     const ctl_schema = new asn1js.org.pkijs.asn1.SEQUENCE({
         name: "CTL",

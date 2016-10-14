@@ -1,5 +1,9 @@
 var xadesjs = require("xadesjs");
 global.xadesjs = xadesjs;
+var asn1js = require("asn1js");
+global.asn1js = asn1js;
+var request = require("sync-request");
+global.request = request;
 var tl_create = require("../built/tl-create");
 var assert = require("assert");
 
@@ -34,11 +38,11 @@ describe("TrustedList format", function () {
 
         assert.equal(tl.Certificates.length, 0, "Wrong Certificates length");
 
-        tl.AddCertificate({ raw: "A1==", operator: "Operator 1", trust: ["FILTER1"], source: "Source1", });
+        tl.AddCertificate({ raw: "A1==", operator: "Operator 1", trust: ["FILTER1"], source: "Source1", evpolicy: ["0.1.2"] });
 
         var text = tl.toString();
 
-        assert.equal(text, "Operator: Operator 1\nSource: Source1\n-----BEGIN CERTIFICATE-----\nA1==\n-----END CERTIFICATE-----");
+        assert.equal(text, "Operator: Operator 1\nSource: Source1\nEV OIDs: 0.1.2\n-----BEGIN CERTIFICATE-----\nA1==\n-----END CERTIFICATE-----");
     })
 
     it("Filter", function () {

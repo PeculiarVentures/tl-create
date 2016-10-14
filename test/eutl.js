@@ -4,6 +4,10 @@
 global.DOMParser = require("xmldom-alpha").DOMParser;
 var xadesjs = require("xadesjs");
 global.xadesjs = xadesjs;
+var asn1js = require("asn1js");
+global.asn1js = asn1js;
+var request = require("sync-request");
+global.request = request;
 var WebCrypto = require("node-webcrypto-ossl");
 xadesjs.Application.setEngine("OpenSSL", new WebCrypto());
 var tl_create = require("../built/tl-create");
