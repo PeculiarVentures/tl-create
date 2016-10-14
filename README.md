@@ -2,7 +2,7 @@
 
 [![license](https://img.shields.io/badge/license-MIT-green.svg?style=flat)](https://raw.githubusercontent.com/PeculiarVentures/tl-create/master/LICENSE)
 [![Build Status](https://travis-ci.org/PeculiarVentures/tl-create.svg?branch=master)](https://travis-ci.org/PeculiarVentures/tl-create)
-[![NPM version](https://badge.fury.io/js/tl-create.png)](http://badge.fury.io/tl-create)
+[![NPM version](https://badge.fury.io/js/tl-create.svg)](http://badge.fury.io/tl-create)
 
 
 Node command line tool to create a X.509 trust list from various trust stores
