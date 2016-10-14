@@ -72,7 +72,7 @@ node src/bin/tl-create.js --eutl --format pem roots.pem
 node src/bin/tl-create.js --eutl --format pem roots.pem
 ```
 
-#### Extract only SERVER_AUTH certificates from Mozilla and Microsoft
+### Extract only SERVER_AUTH certificates from Mozilla and Microsoft
 
 ```
 node src/bin/tl-create.js --mozilla --microsoft --for "SERVER_AUTH" --format pem roots.pem
