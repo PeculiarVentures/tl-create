@@ -66,6 +66,12 @@ node src/bin/tl-create.js --eutl --format pem roots.pem
   STEP_UP_APPROVED
 ```
 
+#### Extract only EMAIL_PROTECTION and CODE_SIGNING
+
+```
+tl-create --mozilla --for "EMAIL_PROTECTION,CODE_SIGNING" --format pem roots.pem
+```
+
 **NOTE**: The default is ALL purposes 
 
 ### Extract all EUTL Roots
