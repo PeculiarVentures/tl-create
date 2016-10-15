@@ -628,7 +628,11 @@ var tl_create;
         "1.3.6.1.5.5.7.3.5": "IPSEC_END_SYSTEM",
         "1.3.6.1.5.5.7.3.6": "IPSEC_TUNNEL",
         "1.3.6.1.5.5.7.3.7": "IPSEC_USER",
-        "1.3.6.1.5.5.7.3.8": "TIME_STAMPING"
+        "1.3.6.1.5.5.7.3.8": "TIME_STAMPING",
+        "1.3.6.1.5.5.7.3.9": "OCSP_SIGNING",
+        "1.3.6.1.5.5.8.2.2": "IPSEC_PROTECTION",
+        "1.3.6.1.4.1.311.10.3.12": "DOCUMENT_SIGNING",
+        "1.3.6.1.4.1.311.10.3.4": "EFS_CRYPTO"
     };
     var Microsoft = (function () {
         function Microsoft() {

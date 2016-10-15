@@ -94,8 +94,12 @@ program.on('--help', function () {
     console.log('    IPSEC_END_SYSTEM');
     console.log('    IPSEC_TUNNEL');
     console.log('    IPSEC_USER');
+    console.log('    IPSEC_PROTECTION');
     console.log('    TIME_STAMPING');
     console.log('    STEP_UP_APPROVED');
+    console.log('    OCSP_SIGNING');
+    console.log('    DOCUMENT_SIGNING');
+    console.log('    EFS_CRYPTO');
     console.log('');
 });
 
@@ -146,7 +150,6 @@ function parseMicrosoft() {
     else
         child_process.execSync('cabextract authrootstl.cab', { cwd: dirpath });
     var data = fs.readFileSync(path.join(dirpath, 'authroot.stl'), 'base64');
-    //fs.writeFileSync('/tmp/llll.stl', data, 'binary');
     fs.unlinkSync(path.join(dirpath, 'authroot.stl'));
     fs.unlinkSync(path.join(dirpath, 'authrootstl.cab'));
     temp.cleanupSync();
