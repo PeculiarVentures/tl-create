@@ -51,6 +51,10 @@ node src/bin/tl-create.js --microsoft --format pem roots.pem
   IPSEC_TUNNEL
   IPSEC_USER
   TIME_STAMPING
+  OCSP_SIGNING
+  IPSEC_PROTECTION
+  DOCUMENT_SIGNING
+  EFS_CRYPTO
 ```
 
 ### Extract all Mozilla Roots
