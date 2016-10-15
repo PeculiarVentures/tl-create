@@ -103,7 +103,7 @@ namespace tl_create {
 
     export class Microsoft {
 
-        parse(data: string): TrustedList {
+        parse(data: string, skipfetch = false): TrustedList {
             let tl = new TrustedList();
 
             var databuf = new Buffer(data, "base64");
@@ -117,15 +117,20 @@ namespace tl_create {
             if(variant.verified === false)
                 throw new Error("Cannot parse STL");
 
-            process.stdout.write("Fetching certificates");
+            if(skipfetch == false)
+                process.stdout.write("Fetching certificates");
             for(let ctlentry of variant.result.CTLEntry) {
-                process.stdout.write(".");
+                if(skipfetch == false)
+                    process.stdout.write(".");
                 let ctlentry_parsed = asn1js.org.pkijs.verifySchema(ctlentry.toBER(), ctlentry_schema);
 
                 let certid = asn1js.org.pkijs.bufferToHexCodes(ctlentry_parsed.result.CertID.value_block.value_hex);
 
+                let certraw = "";
+                if(skipfetch == false)
+                    certraw = this.fetchcert(certid);
                 let tl_cert: X509Certificate = {
-                    raw: this.fetchcert(certid),
+                    raw: certraw,
                     trust: [],
                     operator: "",
                     source: "Microsoft",
@@ -161,7 +166,8 @@ namespace tl_create {
 
                 tl.AddCertificate(tl_cert);
             }
-            console.log();
+            if(skipfetch == false)
+                console.log();
 
             return tl;
         }
