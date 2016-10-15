@@ -41,6 +41,18 @@ This would produce a file that looked something like this:
 node src/bin/tl-create.js --microsoft --format pem roots.pem
 ```
 
+#### Valid Microsoft trust purposes 
+```
+  SERVER_AUTH
+  CLIENT_AUTH
+  CODE_SIGNING
+  EMAIL_PROTECTION
+  IPSEC_END_SYSTEM
+  IPSEC_TUNNEL
+  IPSEC_USER
+  TIME_STAMPING
+```
+
 ### Extract all Mozilla Roots
 ```
 node src/bin/tl-create.js --eutl --format pem roots.pem
