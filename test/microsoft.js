@@ -15,7 +15,7 @@ var fs = require("fs");
 describe("Microsoft format", function () {
 
     it("Parse incoming text", function () {
-        this.timeout(5000);
+        this.timeout(15000);
 
         // get static file
         var msText = fs.readFileSync("./test/static/authroot.stl", "base64");
