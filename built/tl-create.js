@@ -532,6 +532,8 @@ var tl_create;
         return SchemeOperatorName;
     }(MultiLangType));
 })(tl_create || (tl_create = {}));
+/// <reference path="asn1js.d.ts" />
+/// <reference path="sync-request.d.ts" />
 var tl_create;
 (function (tl_create) {
     var ctl_schema = new asn1js.org.pkijs.asn1.SEQUENCE({
@@ -631,7 +633,8 @@ var tl_create;
     var Microsoft = (function () {
         function Microsoft() {
         }
-        Microsoft.prototype.parse = function (data) {
+        Microsoft.prototype.parse = function (data, skipfetch) {
+            if (skipfetch === void 0) { skipfetch = false; }
             var tl = new tl_create.TrustedList();
             var databuf = new Buffer(data, "base64");
             var variant;
@@ -642,14 +645,19 @@ var tl_create;
             }
             if (variant.verified === false)
                 throw new Error("Cannot parse STL");
-            process.stdout.write("Fetching certificates");
+            if (skipfetch == false)
+                process.stdout.write("Fetching certificates");
             for (var _i = 0, _a = variant.result.CTLEntry; _i < _a.length; _i++) {
                 var ctlentry = _a[_i];
-                process.stdout.write(".");
+                if (skipfetch == false)
+                    process.stdout.write(".");
                 var ctlentry_parsed = asn1js.org.pkijs.verifySchema(ctlentry.toBER(), ctlentry_schema);
                 var certid = asn1js.org.pkijs.bufferToHexCodes(ctlentry_parsed.result.CertID.value_block.value_hex);
+                var certraw = "";
+                if (skipfetch == false)
+                    certraw = this.fetchcert(certid);
                 var tl_cert = {
-                    raw: this.fetchcert(certid),
+                    raw: certraw,
                     trust: [],
                     operator: "",
                     source: "Microsoft",
@@ -683,7 +691,8 @@ var tl_create;
                 }
                 tl.AddCertificate(tl_cert);
             }
-            console.log();
+            if (skipfetch == false)
+                console.log();
             return tl;
         };
         Microsoft.prototype.fetchcert = function (certid) {
