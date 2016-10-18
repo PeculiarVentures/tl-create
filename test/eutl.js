@@ -49,7 +49,7 @@ describe("EUTL format", function () {
         var eutlText = fs.readFileSync("./test/static/eutl.xml", "utf8");
 
         var eutl = new tl_create.EUTL();
-        var tl = eutl.parse(eutlText);
+        var tl = eutl.getTrusted(eutlText);
         assert.equal(tl.Certificates.length, 101);
     });
 

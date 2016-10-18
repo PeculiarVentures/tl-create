@@ -71,12 +71,16 @@ namespace tl_create {
             this.codeFilterList = codeFilter;
         }
 
-        getTrusted(): TrustedList {
+        getTrusted(data?: string): TrustedList {
             // console.log("parsing started "+ this.codeFilterList);
             let tl = new TrustedList();
 
-            let res = request('GET', mozillaURL, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
-            this.certText = res.body.toString().replace(/\r\n/g, "\n").split("\n");
+            if(data) {
+                this.certText = data.replace(/\r\n/g, "\n").split("\n");
+            } else {
+                let res = request('GET', mozillaURL, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
+                this.certText = res.body.toString().replace(/\r\n/g, "\n").split("\n");
+            }
             this.findObjectDefinitionsSegment();
             this.findTrustSegment();
             this.findBeginDataSegment();

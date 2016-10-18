@@ -115,14 +115,18 @@ namespace tl_create {
 
     export class Microsoft {
 
-        getTrusted(skipfetch = false): TrustedList {
+        getTrusted(data?: string, skipfetch = false): TrustedList {
             let tl = new TrustedList();
+            let databuf: Buffer;
 
-            let data = this.fetchSTL(microsoftTrustedURL, microsoftTrustedFilename);
+            if(!data)
+                databuf = this.fetchSTL(microsoftTrustedURL, microsoftTrustedFilename);
+            else
+                databuf = new Buffer(data, "binary");
 
             let variant: any;
-            for(let i = 0; i < data.buffer.byteLength; i++) {
-                variant = asn1js.org.pkijs.verifySchema(data.buffer.slice(i), ctl_schema);
+            for(let i = 0; i < databuf.buffer.byteLength; i++) {
+                variant = asn1js.org.pkijs.verifySchema(databuf.buffer.slice(i), ctl_schema);
                 if(variant.verified === true)
                     break;
             }

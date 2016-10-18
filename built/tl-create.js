@@ -58,11 +58,16 @@ var tl_create;
             }
             this.codeFilterList = codeFilter;
         }
-        Mozilla.prototype.getTrusted = function () {
+        Mozilla.prototype.getTrusted = function (data) {
             // console.log("parsing started "+ this.codeFilterList);
             var tl = new tl_create.TrustedList();
-            var res = request('GET', mozillaURL, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
-            this.certText = res.body.toString().replace(/\r\n/g, "\n").split("\n");
+            if (data) {
+                this.certText = data.replace(/\r\n/g, "\n").split("\n");
+            }
+            else {
+                var res = request('GET', mozillaURL, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
+                this.certText = res.body.toString().replace(/\r\n/g, "\n").split("\n");
+            }
             this.findObjectDefinitionsSegment();
             this.findTrustSegment();
             this.findBeginDataSegment();
@@ -203,10 +208,13 @@ var tl_create;
         function EUTL() {
             this.TrustServiceStatusList = null;
         }
-        EUTL.prototype.getTrusted = function () {
+        EUTL.prototype.getTrusted = function (data) {
             var eutl = new tl_create.TrustServiceStatusList();
-            var res = request('GET', euURL, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
-            var xml = new DOMParser().parseFromString(res.body.toString(), "application/xml");
+            if (!data) {
+                var res = request('GET', euURL, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
+                data = res.body.toString();
+            }
+            var xml = new DOMParser().parseFromString(data, "application/xml");
             eutl.LoadXml(xml);
             this.TrustServiceStatusList = eutl;
             var tl = new tl_create.TrustedList();
@@ -647,13 +655,17 @@ var tl_create;
     var Microsoft = (function () {
         function Microsoft() {
         }
-        Microsoft.prototype.getTrusted = function (skipfetch) {
+        Microsoft.prototype.getTrusted = function (data, skipfetch) {
             if (skipfetch === void 0) { skipfetch = false; }
             var tl = new tl_create.TrustedList();
-            var data = this.fetchSTL(microsoftTrustedURL, microsoftTrustedFilename);
+            var databuf;
+            if (!data)
+                databuf = this.fetchSTL(microsoftTrustedURL, microsoftTrustedFilename);
+            else
+                databuf = new Buffer(data, "binary");
             var variant;
-            for (var i = 0; i < data.buffer.byteLength; i++) {
-                variant = asn1js.org.pkijs.verifySchema(data.buffer.slice(i), ctl_schema);
+            for (var i = 0; i < databuf.buffer.byteLength; i++) {
+                variant = asn1js.org.pkijs.verifySchema(databuf.buffer.slice(i), ctl_schema);
                 if (variant.verified === true)
                     break;
             }

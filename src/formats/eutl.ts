@@ -5,10 +5,14 @@ namespace tl_create {
 
         TrustServiceStatusList: TrustServiceStatusList = null;
 
-        getTrusted(): TrustedList {
+        getTrusted(data?: string): TrustedList {
             let eutl = new tl_create.TrustServiceStatusList();
-            let res = request('GET', euURL, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
-            let xml = new DOMParser().parseFromString(res.body.toString(), "application/xml");
+
+            if(!data) {
+                let res = request('GET', euURL, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
+                data = res.body.toString();
+            }
+            let xml = new DOMParser().parseFromString(data, "application/xml");
             eutl.LoadXml(xml);
             this.TrustServiceStatusList = eutl;
             let tl = new TrustedList();
