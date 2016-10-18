@@ -746,6 +746,133 @@ var tl_create;
 })(tl_create || (tl_create = {}));
 var tl_create;
 (function (tl_create) {
+    var appleBaseURL = "https://opensource.apple.com/source/security_certificates/";
+    var Apple = (function () {
+        function Apple() {
+        }
+        Apple.prototype.getTrusted = function (datatllist, datacertlist, dataevroots, skipfetch) {
+            if (skipfetch === void 0) { skipfetch = false; }
+            var tl = new tl_create.TrustedList();
+            var tlVersion = this.getLatestVersion(datatllist);
+            var certnames = this.getTrustedCertList(tlVersion, datacertlist);
+            var evroots = this.getEVOIDList(tlVersion, dataevroots);
+            if (skipfetch === false)
+                process.stdout.write("Fetching certificates");
+            for (var _i = 0, certnames_1 = certnames; _i < certnames_1.length; _i++) {
+                var certname = certnames_1[_i];
+                var certraw = "";
+                var evpolicies = [];
+                if (skipfetch === false)
+                    process.stdout.write(".");
+                if (skipfetch === false)
+                    certraw = this.getTrustedCert(tlVersion, certname);
+                if (certname in evroots)
+                    evpolicies = evroots[certname];
+                var tl_cert = {
+                    raw: certraw,
+                    trust: [],
+                    operator: decodeURI(certname.slice(0, -4)),
+                    source: "Apple",
+                    evpolicy: evpolicies
+                };
+                tl.AddCertificate(tl_cert);
+            }
+            if (skipfetch === false)
+                console.log();
+            return tl;
+        };
+        Apple.prototype.getLatestVersion = function (data) {
+            if (!data) {
+                var res = request("GET", appleBaseURL, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
+                data = res.body.toString();
+            }
+            var ch = cheerio.load(data);
+            var verstr;
+            var vernum = -1;
+            ch("td").has("img").find("a").each(function (i, anchor) {
+                var href = anchor.attribs["href"];
+                if (href.startsWith("security_certificates-")) {
+                    var linkver = href.replace(/^security_certificates-/, "").replace(/\/*$/, "");
+                    var linkarr = linkver.split(".");
+                    var linknum = parseInt(linkarr[0]) * 1000000;
+                    if (linkarr.length > 1)
+                        linknum += parseInt(linkarr[1]) * 1000;
+                    if (linkarr.length > 2)
+                        linknum += parseInt(linkarr[2]);
+                    if (linknum > vernum) {
+                        verstr = linkver;
+                        vernum = linknum;
+                    }
+                }
+            });
+            return verstr;
+        };
+        Apple.prototype.getTrustedCertList = function (version, data) {
+            if (!data) {
+                var url = appleBaseURL + "security_certificates-" + version + "/certificates/roots/";
+                var res = request("GET", url, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
+                data = res.body.toString();
+            }
+            var ch = cheerio.load(data);
+            var filenames = [];
+            ch("td").has("img").find("a").each(function (i, anchor) {
+                var href = anchor.attribs["href"];
+                if (href.endsWith("/certificates/"))
+                    return;
+                filenames.push(href);
+            });
+            return filenames;
+        };
+        Apple.prototype.getEVOIDList = function (version, data) {
+            if (!data) {
+                var url = appleBaseURL + "security_certificates-" + version + "/certificates/evroot.config?txt";
+                var res = request("GET", url, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
+                data = res.body.toString();
+            }
+            var evroots = {};
+            var lines = data.split("\n").filter(function (v) { if ((v === "") || (v.indexOf("#") === 0))
+                return false;
+            else
+                return true; });
+            for (var _i = 0, lines_1 = lines; _i < lines_1.length; _i++) {
+                var line = lines_1[_i];
+                var linespl = this.splitLine(line);
+                for (var _a = 0, _b = linespl.splice(1); _a < _b.length; _a++) {
+                    var cert = _b[_a];
+                    cert = cert.replace(/"/g, "");
+                    if (cert in evroots)
+                        evroots[cert].push(linespl[0]);
+                    else
+                        evroots[cert] = [linespl[0]];
+                }
+            }
+            return evroots;
+        };
+        Apple.prototype.getTrustedCert = function (version, filename) {
+            var url = appleBaseURL + "security_certificates-" + version + "/certificates/roots/" + filename;
+            var res = request("GET", url, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
+            return res.body.toString("base64");
+        };
+        Apple.prototype.splitLine = function (line) {
+            var re_value = /(?!\s*$)\s*(?:'([^'\\]*(?:\\[\S\s][^'\\]*)*)'|"([^"\\]*(?:\\[\S\s][^"\\]*)*)"|([^ '"\s\\]*(?:\s+[^ '"\s\\]+)*))\s*(?: |$)/g;
+            var a = [];
+            line.replace(re_value, function (m0, m1, m2, m3) {
+                if (m1 !== undefined)
+                    a.push(m1.replace(/\\'/g, "'"));
+                else if (m2 !== undefined)
+                    a.push(m2.replace(/\\"/g, "\""));
+                else if (m3 !== undefined)
+                    a.push(m3);
+                return "";
+            });
+            return a;
+        };
+        return Apple;
+    }());
+    tl_create.Apple = Apple;
+})(tl_create || (tl_create = {}));
+var tl_create;
+(function (tl_create) {
     var TrustedList = (function () {
         function TrustedList() {
             this.m_certificates = [];

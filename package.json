@@ -19,7 +19,8 @@
     "xmldom-alpha": "^0.1.23",
     "temp": "^0.8.3",
     "node.extend": "^1.1.6",
-    "asn1js": "^1.2.12"
+    "asn1js": "^1.2.12",
+    "cheerio": "^0.22.0"
   },
   "devDependencies": {},
   "repository": {

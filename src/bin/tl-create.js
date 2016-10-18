@@ -8,6 +8,7 @@ var merge = require("node.extend");
 var common = require("asn1js/org/pkijs/common");
 var _asn1js = require("asn1js");
 global.asn1js = merge(true, _asn1js, common);
+global.cheerio = require("cheerio");
 global.DOMParser = require('xmldom-alpha').DOMParser;
 global.XMLSerializer = require('xmldom-alpha').XMLSerializer;
 var WebCrypto = require("node-webcrypto-ossl");
@@ -58,6 +59,7 @@ program
     .option('-e, --eutl', 'EU Trust List Parse')
     .option('-m, --mozilla', 'Mozilla Trust List Parse')
     .option('-s, --microsoft', 'Microsoft Trust List Parse')
+    .option('-a, --apple', 'Apple Trust List Parse')
     .option('-f, --for [type]', 'Add the specified type for parse', 'ALL')
     .option('-o, --format [format]', 'Add the specified type for output format', 'pem');
 
@@ -132,6 +134,13 @@ function parseMicrosoftTrusted() {
     return tl;
 }
 
+function parseAppleTrusted() {
+    console.log("Trust Lists: Apple");
+    var apple = new tl_create.Apple();
+    var tl = apple.getTrusted();
+    return tl;
+}
+
 function jsonToPKIJS(json) {
     var _pkijs = [];
     for (var i in json) {
@@ -163,7 +172,7 @@ else if (program.args[0]) {
     console.log('Parsing started: ' + getDateTime());
     var outputfile = program.args[0];
 
-    var eutlTL, mozTL, msTL;
+    var eutlTL, mozTL, msTL, appleTL;
 
     if (program.eutl) {
         try {
@@ -187,6 +196,13 @@ else if (program.args[0]) {
             console.log(e.toString());
         }
     }
+    if (program.apple) {
+        try {
+            appleTL = parseAppleTrusted();
+        } catch (e) {
+            console.log(e.toString());
+        }
+    }
 
     var tl = null;
     if (mozTL)
@@ -195,6 +211,8 @@ else if (program.args[0]) {
         tl = eutlTL.concat(tl);
     if (msTL)
         tl = msTL.concat(tl);
+    if (appleTL)
+        tl = appleTL.concat(tl);
 
     if (tl === null) {
         console.log("Cannot fetch any Trust Lists.");
