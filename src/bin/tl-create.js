@@ -2,7 +2,6 @@
 
 var program = require('commander');
 var util = require('util');
-//var request = require('sync-request');
 global.request = require('sync-request');
 global.xadesjs = require('xadesjs');
 var merge = require("node.extend");
@@ -19,9 +18,6 @@ var temp = require('temp').track();
 var path = require('path');
 var child_process = require('child_process');
 var prefix = "tsl:";//used by eutl 
-var euUrl = "https://ec.europa.eu/information_society/policy/esignature/trusted-list/tl-mp.xml";
-var mozillaUrl = "http://mxr.mozilla.org/mozilla/source/security/nss/lib/ckfw/builtins/certdata.txt?raw=1";
-var microsoftUrl = "http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab";
 var isFirstOutput = true;
 var totalRootCount = 0;
 var parsedRootCount = 0;
@@ -105,19 +101,10 @@ program.on('--help', function () {
 
 program.parse(process.argv);
 
-function getRemoteTL(url) {
-    console.log("TL data: Downloading from " + url);
-    var res = request('GET', url, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
-    var data = res.body.toString('utf-8');
-    console.log("TL data: Ok");
-    return data;
-}
-
-function parseEUTL() {
+function parseEUTLTrusted() {
     console.log("Trust Lists: EUTL");
-    var data = getRemoteTL(euUrl);
     var eutl = new tl_create.EUTL();
-    var tl = eutl.parse(data);
+    var tl = eutl.getTrusted();
     eutl.TrustServiceStatusList.CheckSignature()
         .then(function (verify) {
             if (!verify)
@@ -131,31 +118,17 @@ function parseEUTL() {
     return tl;
 }
 
-function parseMozilla() {
+function parseMozillaTrusted() {
     console.log("Trust Lists: Mozilla");
-    var data = getRemoteTL(mozillaUrl);
     var moz = new tl_create.Mozilla();
-    var tl = moz.parse(data);
+    var tl = moz.getTrusted();
     return tl;
 }
 
-function parseMicrosoft() {
+function parseMicrosoftTrusted() {
     console.log("Trust Lists: Microsoft");
-    var res = request('GET', microsoftUrl, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
-
-    var dirpath = temp.mkdirSync('authrootstl');
-    fs.writeFileSync(path.join(dirpath, 'authrootstl.cab'), res.body);
-    if(process.platform === 'win32')
-        child_process.execSync('expand authrootstl.cab .', { cwd: dirpath });
-    else
-        child_process.execSync('cabextract authrootstl.cab', { cwd: dirpath });
-    var data = fs.readFileSync(path.join(dirpath, 'authroot.stl'), 'base64');
-    fs.unlinkSync(path.join(dirpath, 'authroot.stl'));
-    fs.unlinkSync(path.join(dirpath, 'authrootstl.cab'));
-    temp.cleanupSync();
-
     var ms = new tl_create.Microsoft();
-    var tl = ms.parse(data);
+    var tl = ms.getTrusted();
     return tl;
 }
 
@@ -194,7 +167,7 @@ else if (program.args[0]) {
 
     if (program.eutl) {
         try {
-            eutlTL = parseEUTL();
+            eutlTL = parseEUTLTrusted();
         } catch (e) {
             console.log(e.toString(), e.stack);
         }
@@ -202,14 +175,14 @@ else if (program.args[0]) {
     }
     if (program.mozilla) {
         try {
-            mozTL = parseMozilla();
+            mozTL = parseMozillaTrusted();
         } catch (e) {
             console.log(e.toString());
         }
     }
     if (program.microsoft) {
         try {
-            msTL = parseMicrosoft();
+            msTL = parseMicrosoftTrusted();
         } catch (e) {
             console.log(e.toString());
         }

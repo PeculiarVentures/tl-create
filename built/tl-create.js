@@ -46,6 +46,7 @@ var tl_create;
         MULTILINE_OCTAL: "MULTILINE_OCTAL",
         CK_TRUST: "CK_TRUST"
     };
+    var mozillaURL = "http://mxr.mozilla.org/mozilla/source/security/nss/lib/ckfw/builtins/certdata.txt?raw=1";
     var Mozilla = (function () {
         function Mozilla(codeFilter) {
             if (codeFilter === void 0) { codeFilter = ["CKA_TRUST_ALL"]; }
@@ -57,10 +58,11 @@ var tl_create;
             }
             this.codeFilterList = codeFilter;
         }
-        Mozilla.prototype.parse = function (data) {
+        Mozilla.prototype.getTrusted = function () {
             // console.log("parsing started "+ this.codeFilterList);
             var tl = new tl_create.TrustedList();
-            this.certText = data.replace(/\r\n/g, "\n").split("\n");
+            var res = request('GET', mozillaURL, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
+            this.certText = res.body.toString().replace(/\r\n/g, "\n").split("\n");
             this.findObjectDefinitionsSegment();
             this.findTrustSegment();
             this.findBeginDataSegment();
@@ -196,13 +198,15 @@ var tl_create;
 })(tl_create || (tl_create = {}));
 var tl_create;
 (function (tl_create) {
+    var euURL = "http://ec.europa.eu/information_society/newsroom/cf/dae/document.cfm?doc_id=1789";
     var EUTL = (function () {
         function EUTL() {
             this.TrustServiceStatusList = null;
         }
-        EUTL.prototype.parse = function (data) {
+        EUTL.prototype.getTrusted = function () {
             var eutl = new tl_create.TrustServiceStatusList();
-            var xml = new DOMParser().parseFromString(data, "application/xml");
+            var res = request('GET', euURL, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
+            var xml = new DOMParser().parseFromString(res.body.toString(), "application/xml");
             eutl.LoadXml(xml);
             this.TrustServiceStatusList = eutl;
             var tl = new tl_create.TrustedList();
@@ -534,6 +538,10 @@ var tl_create;
 })(tl_create || (tl_create = {}));
 /// <reference path="asn1js.d.ts" />
 /// <reference path="sync-request.d.ts" />
+var fs = require("fs");
+var temp = require("temp");
+var path = require("path");
+var child_process = require("child_process");
 var tl_create;
 (function (tl_create) {
     var ctl_schema = new asn1js.org.pkijs.asn1.SEQUENCE({
@@ -634,16 +642,18 @@ var tl_create;
         "1.3.6.1.4.1.311.10.3.12": "DOCUMENT_SIGNING",
         "1.3.6.1.4.1.311.10.3.4": "EFS_CRYPTO"
     };
+    var microsoftTrustedURL = "http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab";
+    var microsoftTrustedFilename = "authroot.stl";
     var Microsoft = (function () {
         function Microsoft() {
         }
-        Microsoft.prototype.parse = function (data, skipfetch) {
+        Microsoft.prototype.getTrusted = function (skipfetch) {
             if (skipfetch === void 0) { skipfetch = false; }
             var tl = new tl_create.TrustedList();
-            var databuf = new Buffer(data, "base64");
+            var data = this.fetchSTL(microsoftTrustedURL, microsoftTrustedFilename);
             var variant;
-            for (var i = 0; i < databuf.buffer.byteLength; i++) {
-                variant = asn1js.org.pkijs.verifySchema(databuf.buffer.slice(i), ctl_schema);
+            for (var i = 0; i < data.buffer.byteLength; i++) {
+                variant = asn1js.org.pkijs.verifySchema(data.buffer.slice(i), ctl_schema);
                 if (variant.verified === true)
                     break;
             }
@@ -703,6 +713,20 @@ var tl_create;
             var url = "http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/" + certid + ".crt";
             var res = request('GET', url, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
             return res.body.toString('base64');
+        };
+        Microsoft.prototype.fetchSTL = function (uri, filename) {
+            var res = request('GET', uri, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
+            var dirpath = temp.mkdirSync('authrootstl');
+            fs.writeFileSync(path.join(dirpath, filename + '.cab'), res.body);
+            if (process.platform === 'win32')
+                child_process.execSync('expand ' + filename + '.cab .', { cwd: dirpath });
+            else
+                child_process.execSync('cabextract ' + filename + '.cab', { cwd: dirpath });
+            var data = fs.readFileSync(path.join(dirpath, filename));
+            fs.unlinkSync(path.join(dirpath, filename));
+            fs.unlinkSync(path.join(dirpath, filename + '.cab'));
+            temp.cleanupSync();
+            return data;
         };
         return Microsoft;
     }());
