@@ -81,6 +81,11 @@ node src/bin/tl-create.js --eutl --format pem roots.pem
   STEP_UP_APPROVED
 ```
 
+### Extract all Apple Roots
+```
+node src/bin/tl-create.js --apple --format pem roots.pem
+```
+
 
 ### Extract all EUTL Roots
 ```
