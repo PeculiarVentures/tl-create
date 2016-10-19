@@ -14,7 +14,7 @@ var fs = require("fs");
 
 describe("Microsoft format", function () {
 
-    it("Parse incoming text", function () {
+    it("Parse incoming text for trusted roots", function () {
         this.timeout(15000);
 
         // get static file
@@ -24,6 +24,18 @@ describe("Microsoft format", function () {
         var tl = ms.getTrusted(msText, true);
         
         assert.equal(tl.Certificates.length, 356);
+    });
+
+    it("Parse incoming text for disallowed roots", function () {
+        this.timeout(15000);
+
+        // get static file
+        var msText = fs.readFileSync("./test/static/disallowedcert.stl", "binary");
+
+        var ms = new tl_create.Microsoft();
+        var tl = ms.getDisallowed(msText, true);
+        
+        assert.equal(tl.Certificates.length, 64);
     });
 
 })
