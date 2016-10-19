@@ -160,7 +160,10 @@ function parseAppleTrusted() {
 }
 
 function parseAppleDisallowed() {
-    throw "Apple disallowed certificates not yet implemented.";
+    console.log("Trust Lists: Apple");
+    var apple = new tl_create.Apple();
+    var tl = apple.getDisallowed();
+    return tl;
 }
 
 function jsonToPKIJS(json) {

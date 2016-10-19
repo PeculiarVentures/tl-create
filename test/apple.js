@@ -16,7 +16,7 @@ var fs = require("fs");
 
 describe("Apple format", function () {
 
-    it("Parse incoming text", function () {
+    it("Parse incoming text for trusted roots", function () {
         // get static file
         var appleTLListText = fs.readFileSync("./test/static/apple_tl_list.html", "utf8");
         var appleCertListText = fs.readFileSync("./test/static/apple_cert_list.html", "utf8");
@@ -26,6 +26,17 @@ describe("Apple format", function () {
         var tl = ms.getTrusted(appleTLListText, appleCertListText, appleEVRootText, true);
         
         assert.equal(tl.Certificates.length, 188);
+    });
+
+    it("Parse incoming text for disallowed roots", function () {
+        // get static file
+        var appleTLListText = fs.readFileSync("./test/static/apple_tl_list.html", "utf8");
+        var appleCertListText = fs.readFileSync("./test/static/apple_dis_cert_list.html", "utf8");
+
+        var ms = new tl_create.Apple();
+        var tl = ms.getDisallowed(appleTLListText, appleCertListText, true);
+        
+        assert.equal(tl.Certificates.length, 12);
     });
 
 })
