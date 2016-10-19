@@ -12,6 +12,7 @@
         "src/formats/mozilla.ts",
         "src/formats/eutl.ts",
         "src/formats/ms.ts",
+        "src/formats/apple.ts",
         "src/tl.ts",
         "src/export.ts"
     ]

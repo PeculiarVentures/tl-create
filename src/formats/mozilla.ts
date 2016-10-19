@@ -50,6 +50,8 @@ namespace tl_create {
         value: any;
     }
 
+    const mozillaURL = "http://mxr.mozilla.org/mozilla/source/security/nss/lib/ckfw/builtins/certdata.txt?raw=1";
+
     export class Mozilla {
 
         protected attributes: any[];
@@ -69,11 +71,16 @@ namespace tl_create {
             this.codeFilterList = codeFilter;
         }
 
-        parse(data: string): TrustedList {
+        getTrusted(data?: string): TrustedList {
             // console.log("parsing started "+ this.codeFilterList);
             let tl = new TrustedList();
 
-            this.certText = data.replace(/\r\n/g, "\n").split("\n");
+            if(data) {
+                this.certText = data.replace(/\r\n/g, "\n").split("\n");
+            } else {
+                let res = request('GET', mozillaURL, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
+                this.certText = res.body.toString().replace(/\r\n/g, "\n").split("\n");
+            }
             this.findObjectDefinitionsSegment();
             this.findTrustSegment();
             this.findBeginDataSegment();

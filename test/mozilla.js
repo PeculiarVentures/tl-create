@@ -19,7 +19,7 @@ describe("Mozilla format", function () {
         var mozText = fs.readFileSync("./test/static/mozilla.txt", "utf8");
 
         var moz = new tl_create.Mozilla();
-        var tl = moz.parse(mozText);
+        var tl = moz.getTrusted(mozText);
         
         assert.equal(tl.Certificates.length, 177);
     });

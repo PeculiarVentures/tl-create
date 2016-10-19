@@ -1,11 +1,17 @@
 namespace tl_create {
+    const euURL = "http://ec.europa.eu/information_society/newsroom/cf/dae/document.cfm?doc_id=1789";
 
     export class EUTL {
 
         TrustServiceStatusList: TrustServiceStatusList = null;
 
-        parse(data: string): TrustedList {
+        getTrusted(data?: string): TrustedList {
             let eutl = new tl_create.TrustServiceStatusList();
+
+            if(!data) {
+                let res = request('GET', euURL, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
+                data = res.body.toString();
+            }
             let xml = new DOMParser().parseFromString(data, "application/xml");
             eutl.LoadXml(xml);
             this.TrustServiceStatusList = eutl;

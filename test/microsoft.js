@@ -18,10 +18,10 @@ describe("Microsoft format", function () {
         this.timeout(15000);
 
         // get static file
-        var msText = fs.readFileSync("./test/static/authroot.stl", "base64");
+        var msText = fs.readFileSync("./test/static/authroot.stl", "binary");
 
         var ms = new tl_create.Microsoft();
-        var tl = ms.parse(msText, true);
+        var tl = ms.getTrusted(msText, true);
         
         assert.equal(tl.Certificates.length, 356);
     });

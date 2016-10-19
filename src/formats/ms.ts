@@ -1,6 +1,11 @@
 /// <reference path="asn1js.d.ts" />
 /// <reference path="sync-request.d.ts" />
 
+let fs = require("fs");
+let temp = require("temp");
+let path = require("path");
+let child_process = require("child_process");
+
 namespace tl_create {
     const ctl_schema = new asn1js.org.pkijs.asn1.SEQUENCE({
         name: "CTL",
@@ -105,12 +110,20 @@ namespace tl_create {
         "1.3.6.1.4.1.311.10.3.4": "EFS_CRYPTO"
     };
 
+    const microsoftTrustedURL = "http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab";
+    const microsoftTrustedFilename = "authroot.stl";
+
     export class Microsoft {
 
-        parse(data: string, skipfetch = false): TrustedList {
+        getTrusted(data?: string, skipfetch = false): TrustedList {
             let tl = new TrustedList();
+            let databuf: Buffer;
 
-            var databuf = new Buffer(data, "base64");
+            if(!data)
+                databuf = this.fetchSTL(microsoftTrustedURL, microsoftTrustedFilename);
+            else
+                databuf = new Buffer(data, "binary");
+
             let variant: any;
             for(let i = 0; i < databuf.buffer.byteLength; i++) {
                 variant = asn1js.org.pkijs.verifySchema(databuf.buffer.slice(i), ctl_schema);
@@ -180,6 +193,27 @@ namespace tl_create {
             let url = "http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/" + certid + ".crt";
             let res = request('GET', url, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
             return res.body.toString('base64');
+        }
+
+        fetchSTL(uri: string, filename: string): Buffer {
+            let res = request('GET', uri, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
+
+            let dirpath = temp.mkdirSync('authrootstl');
+            fs.writeFileSync(path.join(dirpath, filename + '.cab'), res.body);
+
+            if(process.platform === 'win32')
+                child_process.execSync('expand ' + filename + '.cab .', { cwd: dirpath });
+            else
+                child_process.execSync('cabextract ' + filename + '.cab', { cwd: dirpath });
+
+            let data = fs.readFileSync(path.join(dirpath, filename));
+
+            fs.unlinkSync(path.join(dirpath, filename));
+            fs.unlinkSync(path.join(dirpath, filename + '.cab'));
+
+            temp.cleanupSync();
+
+            return data;
         }
 
     }

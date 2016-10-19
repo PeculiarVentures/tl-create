@@ -46,6 +46,7 @@ var tl_create;
         MULTILINE_OCTAL: "MULTILINE_OCTAL",
         CK_TRUST: "CK_TRUST"
     };
+    var mozillaURL = "http://mxr.mozilla.org/mozilla/source/security/nss/lib/ckfw/builtins/certdata.txt?raw=1";
     var Mozilla = (function () {
         function Mozilla(codeFilter) {
             if (codeFilter === void 0) { codeFilter = ["CKA_TRUST_ALL"]; }
@@ -57,10 +58,16 @@ var tl_create;
             }
             this.codeFilterList = codeFilter;
         }
-        Mozilla.prototype.parse = function (data) {
+        Mozilla.prototype.getTrusted = function (data) {
             // console.log("parsing started "+ this.codeFilterList);
             var tl = new tl_create.TrustedList();
-            this.certText = data.replace(/\r\n/g, "\n").split("\n");
+            if (data) {
+                this.certText = data.replace(/\r\n/g, "\n").split("\n");
+            }
+            else {
+                var res = request('GET', mozillaURL, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
+                this.certText = res.body.toString().replace(/\r\n/g, "\n").split("\n");
+            }
             this.findObjectDefinitionsSegment();
             this.findTrustSegment();
             this.findBeginDataSegment();
@@ -196,12 +203,17 @@ var tl_create;
 })(tl_create || (tl_create = {}));
 var tl_create;
 (function (tl_create) {
+    var euURL = "http://ec.europa.eu/information_society/newsroom/cf/dae/document.cfm?doc_id=1789";
     var EUTL = (function () {
         function EUTL() {
             this.TrustServiceStatusList = null;
         }
-        EUTL.prototype.parse = function (data) {
+        EUTL.prototype.getTrusted = function (data) {
             var eutl = new tl_create.TrustServiceStatusList();
+            if (!data) {
+                var res = request('GET', euURL, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
+                data = res.body.toString();
+            }
             var xml = new DOMParser().parseFromString(data, "application/xml");
             eutl.LoadXml(xml);
             this.TrustServiceStatusList = eutl;
@@ -534,6 +546,10 @@ var tl_create;
 })(tl_create || (tl_create = {}));
 /// <reference path="asn1js.d.ts" />
 /// <reference path="sync-request.d.ts" />
+var fs = require("fs");
+var temp = require("temp");
+var path = require("path");
+var child_process = require("child_process");
 var tl_create;
 (function (tl_create) {
     var ctl_schema = new asn1js.org.pkijs.asn1.SEQUENCE({
@@ -634,13 +650,19 @@ var tl_create;
         "1.3.6.1.4.1.311.10.3.12": "DOCUMENT_SIGNING",
         "1.3.6.1.4.1.311.10.3.4": "EFS_CRYPTO"
     };
+    var microsoftTrustedURL = "http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab";
+    var microsoftTrustedFilename = "authroot.stl";
     var Microsoft = (function () {
         function Microsoft() {
         }
-        Microsoft.prototype.parse = function (data, skipfetch) {
+        Microsoft.prototype.getTrusted = function (data, skipfetch) {
             if (skipfetch === void 0) { skipfetch = false; }
             var tl = new tl_create.TrustedList();
-            var databuf = new Buffer(data, "base64");
+            var databuf;
+            if (!data)
+                databuf = this.fetchSTL(microsoftTrustedURL, microsoftTrustedFilename);
+            else
+                databuf = new Buffer(data, "binary");
             var variant;
             for (var i = 0; i < databuf.buffer.byteLength; i++) {
                 variant = asn1js.org.pkijs.verifySchema(databuf.buffer.slice(i), ctl_schema);
@@ -704,9 +726,150 @@ var tl_create;
             var res = request('GET', url, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
             return res.body.toString('base64');
         };
+        Microsoft.prototype.fetchSTL = function (uri, filename) {
+            var res = request('GET', uri, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
+            var dirpath = temp.mkdirSync('authrootstl');
+            fs.writeFileSync(path.join(dirpath, filename + '.cab'), res.body);
+            if (process.platform === 'win32')
+                child_process.execSync('expand ' + filename + '.cab .', { cwd: dirpath });
+            else
+                child_process.execSync('cabextract ' + filename + '.cab', { cwd: dirpath });
+            var data = fs.readFileSync(path.join(dirpath, filename));
+            fs.unlinkSync(path.join(dirpath, filename));
+            fs.unlinkSync(path.join(dirpath, filename + '.cab'));
+            temp.cleanupSync();
+            return data;
+        };
         return Microsoft;
     }());
     tl_create.Microsoft = Microsoft;
+})(tl_create || (tl_create = {}));
+var tl_create;
+(function (tl_create) {
+    var appleBaseURL = "https://opensource.apple.com/source/security_certificates/";
+    var Apple = (function () {
+        function Apple() {
+        }
+        Apple.prototype.getTrusted = function (datatllist, datacertlist, dataevroots, skipfetch) {
+            if (skipfetch === void 0) { skipfetch = false; }
+            var tl = new tl_create.TrustedList();
+            var tlVersion = this.getLatestVersion(datatllist);
+            var certnames = this.getTrustedCertList(tlVersion, datacertlist);
+            var evroots = this.getEVOIDList(tlVersion, dataevroots);
+            if (skipfetch === false)
+                process.stdout.write("Fetching certificates");
+            for (var _i = 0, certnames_1 = certnames; _i < certnames_1.length; _i++) {
+                var certname = certnames_1[_i];
+                var certraw = "";
+                var evpolicies = [];
+                if (skipfetch === false)
+                    process.stdout.write(".");
+                if (skipfetch === false)
+                    certraw = this.getTrustedCert(tlVersion, certname);
+                if (certname in evroots)
+                    evpolicies = evroots[certname];
+                var tl_cert = {
+                    raw: certraw,
+                    trust: [],
+                    operator: decodeURI(certname.slice(0, -4)),
+                    source: "Apple",
+                    evpolicy: evpolicies
+                };
+                tl.AddCertificate(tl_cert);
+            }
+            if (skipfetch === false)
+                console.log();
+            return tl;
+        };
+        Apple.prototype.getLatestVersion = function (data) {
+            if (!data) {
+                var res = request("GET", appleBaseURL, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
+                data = res.body.toString();
+            }
+            var ch = cheerio.load(data);
+            var verstr;
+            var vernum = -1;
+            ch("td").has("img").find("a").each(function (i, anchor) {
+                var href = anchor.attribs["href"];
+                if (href.startsWith("security_certificates-")) {
+                    var linkver = href.replace(/^security_certificates-/, "").replace(/\/*$/, "");
+                    var linkarr = linkver.split(".");
+                    var linknum = parseInt(linkarr[0]) * 1000000;
+                    if (linkarr.length > 1)
+                        linknum += parseInt(linkarr[1]) * 1000;
+                    if (linkarr.length > 2)
+                        linknum += parseInt(linkarr[2]);
+                    if (linknum > vernum) {
+                        verstr = linkver;
+                        vernum = linknum;
+                    }
+                }
+            });
+            return verstr;
+        };
+        Apple.prototype.getTrustedCertList = function (version, data) {
+            if (!data) {
+                var url = appleBaseURL + "security_certificates-" + version + "/certificates/roots/";
+                var res = request("GET", url, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
+                data = res.body.toString();
+            }
+            var ch = cheerio.load(data);
+            var filenames = [];
+            ch("td").has("img").find("a").each(function (i, anchor) {
+                var href = anchor.attribs["href"];
+                if (href.endsWith("/certificates/") || (href === "AppleDEVID.cer"))
+                    return;
+                filenames.push(href);
+            });
+            return filenames;
+        };
+        Apple.prototype.getEVOIDList = function (version, data) {
+            if (!data) {
+                var url = appleBaseURL + "security_certificates-" + version + "/certificates/evroot.config?txt";
+                var res = request("GET", url, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
+                data = res.body.toString();
+            }
+            var evroots = {};
+            var lines = data.split("\n").filter(function (v) { if ((v === "") || (v.indexOf("#") === 0))
+                return false;
+            else
+                return true; });
+            for (var _i = 0, lines_1 = lines; _i < lines_1.length; _i++) {
+                var line = lines_1[_i];
+                var linespl = this.splitLine(line);
+                for (var _a = 0, _b = linespl.splice(1); _a < _b.length; _a++) {
+                    var cert = _b[_a];
+                    cert = cert.replace(/"/g, "");
+                    if (cert in evroots)
+                        evroots[cert].push(linespl[0]);
+                    else
+                        evroots[cert] = [linespl[0]];
+                }
+            }
+            return evroots;
+        };
+        Apple.prototype.getTrustedCert = function (version, filename) {
+            var url = appleBaseURL + "security_certificates-" + version + "/certificates/roots/" + filename;
+            var res = request("GET", url, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
+            return res.body.toString("base64");
+        };
+        Apple.prototype.splitLine = function (line) {
+            var re_value = /(?!\s*$)\s*(?:'([^'\\]*(?:\\[\S\s][^'\\]*)*)'|"([^"\\]*(?:\\[\S\s][^"\\]*)*)"|([^ '"\s\\]*(?:\s+[^ '"\s\\]+)*))\s*(?: |$)/g;
+            var a = [];
+            line.replace(re_value, function (m0, m1, m2, m3) {
+                if (m1 !== undefined)
+                    a.push(m1.replace(/\\'/g, "'"));
+                else if (m2 !== undefined)
+                    a.push(m2.replace(/\\"/g, "\""));
+                else if (m3 !== undefined)
+                    a.push(m3);
+                return "";
+            });
+            return a;
+        };
+        return Apple;
+    }());
+    tl_create.Apple = Apple;
 })(tl_create || (tl_create = {}));
 var tl_create;
 (function (tl_create) {
