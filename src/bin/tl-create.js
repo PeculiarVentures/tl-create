@@ -61,7 +61,8 @@ program
     .option('-s, --microsoft', 'Microsoft Trust List Parse')
     .option('-a, --apple', 'Apple Trust List Parse')
     .option('-f, --for [type]', 'Add the specified type for parse', 'ALL')
-    .option('-o, --format [format]', 'Add the specified type for output format', 'pem');
+    .option('-o, --format [format]', 'Add the specified type for output format', 'pem')
+    .option('-d, --disallowed', 'Fetch disallowed roots instead of trusted');
 
 
 program.on('--help', function () {
@@ -72,6 +73,7 @@ program.on('--help', function () {
     console.log('    $ tl-create --eutl --format pem roots.pem');
     console.log('    $ tl-create --eutl --format js roots.js');
     console.log('    $ tl-create --microsoft --format pem roots.pem');
+    console.log('    $ tl-create --microsoft --disallowed --format pem disallowedroots.pem');
     console.log('');
 });
 
@@ -120,11 +122,19 @@ function parseEUTLTrusted() {
     return tl;
 }
 
+function parseEUTLDisallowed() {
+    throw "EUTL does not support disallowed certificates.";
+}
+
 function parseMozillaTrusted() {
     console.log("Trust Lists: Mozilla");
     var moz = new tl_create.Mozilla();
     var tl = moz.getTrusted();
     return tl;
+}
+
+function parseMozillaDisallowed() {
+    throw "Mozilla disallowed certificates not yet implemented.";
 }
 
 function parseMicrosoftTrusted() {
@@ -134,11 +144,22 @@ function parseMicrosoftTrusted() {
     return tl;
 }
 
+function parseMicrosoftDisallowed() {
+    console.log("Trust Lists: Microsoft");
+    var ms = new tl_create.Microsoft();
+    var tl = ms.getDisallowed();
+    return tl;
+}
+
 function parseAppleTrusted() {
     console.log("Trust Lists: Apple");
     var apple = new tl_create.Apple();
     var tl = apple.getTrusted();
     return tl;
+}
+
+function parseAppleDisallowed() {
+    throw "Apple disallowed certificates not yet implemented.";
 }
 
 function jsonToPKIJS(json) {
@@ -176,29 +197,44 @@ else if (program.args[0]) {
 
     if (program.eutl) {
         try {
-            eutlTL = parseEUTLTrusted();
+            if(!program.disallowed)
+                eutlTL = parseEUTLTrusted();
+            else
+                eutlTL = parseEUTLDisallowed();
         } catch (e) {
-            console.log(e.toString(), e.stack);
+            if(e.stack)
+                console.log(e.toString(), e.stack);
+            else
+                console.log(e.toString());
         }
 
     }
     if (program.mozilla) {
         try {
-            mozTL = parseMozillaTrusted();
+            if(!program.disallowed)
+                mozTL = parseMozillaTrusted();
+            else
+                mozTL = parseMozillaDisallowed();
         } catch (e) {
             console.log(e.toString());
         }
     }
     if (program.microsoft) {
         try {
-            msTL = parseMicrosoftTrusted();
+            if(!program.disallowed)
+                msTL = parseMicrosoftTrusted();
+            else
+                msTL = parseMicrosoftDisallowed();
         } catch (e) {
             console.log(e.toString());
         }
     }
     if (program.apple) {
         try {
-            appleTL = parseAppleTrusted();
+            if(!program.disallowed)
+                appleTL = parseAppleTrusted();
+            else
+                appleTL = parseAppleDisallowed();
         } catch (e) {
             console.log(e.toString());
         }

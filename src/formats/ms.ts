@@ -95,6 +95,45 @@ namespace tl_create {
         ]
     });
 
+    const dis_ctl_schema = new asn1js.org.pkijs.asn1.SEQUENCE({
+        name: "DisallowedCTL",
+        value: [
+            new asn1js.org.pkijs.asn1.ANY({
+                name: "dummy1"
+            }),
+            new asn1js.org.pkijs.asn1.OCTETSTRING({
+                name: "dummy2"
+            }),
+            new asn1js.org.pkijs.asn1.INTEGER({
+                name: "unknown"
+            }),
+            new asn1js.org.pkijs.asn1.UTCTIME({
+                name: "GenDate"
+            }),
+            new asn1js.org.pkijs.asn1.ANY({
+                name: "dummy3"
+            }),
+            new asn1js.org.pkijs.asn1.SEQUENCE({
+                name: "InnerCTL",
+                value: [
+                    new asn1js.org.pkijs.asn1.REPEATED({
+                        name: "CTLEntry",
+                        value: new asn1js.org.pkijs.asn1.ANY()
+                    })
+                ]
+            })
+        ]
+    });
+
+    const dis_ctlentry_schema = new asn1js.org.pkijs.asn1.SEQUENCE({
+        name: "DisallowedCTLEntry",
+        value: [
+            new asn1js.org.pkijs.asn1.OCTETSTRING({
+                name: "CertID"
+            })
+        ]
+    });
+
     const EKU_oids = {
         "1.3.6.1.5.5.7.3.1": "SERVER_AUTH",
         "1.3.6.1.5.5.7.3.2": "CLIENT_AUTH",
@@ -112,6 +151,8 @@ namespace tl_create {
 
     const microsoftTrustedURL = "http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab";
     const microsoftTrustedFilename = "authroot.stl";
+    const microsoftDisallowedURL = "http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/disallowedcertstl.cab";
+    const microsoftDisallowedFilename = "disallowedcert.stl";
 
     export class Microsoft {
 
@@ -181,6 +222,53 @@ namespace tl_create {
                     }
                 }
 
+                tl.AddCertificate(tl_cert);
+            }
+            if(skipfetch == false)
+                console.log();
+
+            return tl;
+        }
+
+        getDisallowed(data?: string, skipfetch = false): TrustedList {
+            let tl = new TrustedList();
+            let databuf: Buffer;
+
+            if(!data)
+                databuf = this.fetchSTL(microsoftDisallowedURL, microsoftDisallowedFilename);
+            else
+                databuf = new Buffer(data, "binary");
+
+            let variant: any;
+            for(let i = 0; i < databuf.buffer.byteLength; i++) {
+                variant = asn1js.org.pkijs.verifySchema(databuf.buffer.slice(i), dis_ctl_schema);
+                if(variant.verified === true)
+                    break;
+            }
+
+            if(variant.verified === false)
+                throw new Error("Cannot parse STL");
+
+            if(skipfetch == false)
+                process.stdout.write("Fetching certificates");
+            for(let ctlentry of variant.result.CTLEntry) {
+                if(skipfetch == false)
+                    process.stdout.write(".");
+
+                let ctlentry_parsed = asn1js.org.pkijs.verifySchema(ctlentry.toBER(), dis_ctlentry_schema);
+
+                let certid = asn1js.org.pkijs.bufferToHexCodes(ctlentry_parsed.result.CertID.value_block.value_hex);
+
+                let certraw = "";
+                if(skipfetch == false)
+                    certraw = this.fetchcert(certid);
+                let tl_cert: X509Certificate = {
+                    raw: certraw,
+                    trust: [],
+                    operator: "Unknown",
+                    source: "Microsoft",
+                    evpolicy: []
+                };
                 tl.AddCertificate(tl_cert);
             }
             if(skipfetch == false)
