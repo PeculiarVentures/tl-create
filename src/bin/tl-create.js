@@ -74,6 +74,7 @@ program.on('--help', function () {
     console.log('    $ tl-create --eutl --format js roots.js');
     console.log('    $ tl-create --microsoft --format pem roots.pem');
     console.log('    $ tl-create --microsoft --disallowed --format pem disallowedroots.pem');
+    console.log('    $ tl-create --apple --format pem roots.pem');
     console.log('');
 });
 
