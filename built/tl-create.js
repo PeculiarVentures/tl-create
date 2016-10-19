@@ -817,7 +817,7 @@ var tl_create;
             var filenames = [];
             ch("td").has("img").find("a").each(function (i, anchor) {
                 var href = anchor.attribs["href"];
-                if (href.endsWith("/certificates/"))
+                if (href.endsWith("/certificates/") || (href === "AppleDEVID.cer"))
                     return;
                 filenames.push(href);
             });

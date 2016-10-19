@@ -87,7 +87,7 @@ namespace tl_create {
 
             ch("td").has("img").find("a").each(function(i, anchor) {
                 let href = (<any>anchor.attribs)["href"];
-                if(href.endsWith("/certificates/"))
+                if(href.endsWith("/certificates/") || (href === "AppleDEVID.cer"))
                     return;
 
                 filenames.push(href);

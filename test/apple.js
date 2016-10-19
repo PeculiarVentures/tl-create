@@ -25,7 +25,7 @@ describe("Apple format", function () {
         var ms = new tl_create.Apple();
         var tl = ms.getTrusted(appleTLListText, appleCertListText, appleEVRootText, true);
         
-        assert.equal(tl.Certificates.length, 189);
+        assert.equal(tl.Certificates.length, 188);
     });
 
 })
