@@ -860,6 +860,34 @@ var tl_create;
                 console.log();
             return tl;
         };
+        Apple.prototype.getDisallowed = function (datatllist, datadiscertlist, skipfetch) {
+            if (skipfetch === void 0) { skipfetch = false; }
+            var tl = new tl_create.TrustedList();
+            var tlVersion = this.getLatestVersion(datatllist);
+            var certnames = this.getDistrustedCertList(tlVersion, datadiscertlist);
+            if (skipfetch === false)
+                process.stdout.write("Fetching certificates");
+            for (var _i = 0, certnames_2 = certnames; _i < certnames_2.length; _i++) {
+                var certname = certnames_2[_i];
+                var certraw = "";
+                var evpolicies = [];
+                if (skipfetch === false)
+                    process.stdout.write(".");
+                if (skipfetch === false)
+                    certraw = this.getDistrustedCert(tlVersion, certname);
+                var tl_cert = {
+                    raw: certraw,
+                    trust: [],
+                    operator: decodeURI(certname.slice(0, -4)),
+                    source: "Apple",
+                    evpolicy: evpolicies
+                };
+                tl.AddCertificate(tl_cert);
+            }
+            if (skipfetch === false)
+                console.log();
+            return tl;
+        };
         Apple.prototype.getLatestVersion = function (data) {
             if (!data) {
                 var res = request("GET", appleBaseURL, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
@@ -902,6 +930,22 @@ var tl_create;
             });
             return filenames;
         };
+        Apple.prototype.getDistrustedCertList = function (version, data) {
+            if (!data) {
+                var url = appleBaseURL + "security_certificates-" + version + "/certificates/distrusted/";
+                var res = request("GET", url, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
+                data = res.body.toString();
+            }
+            var ch = cheerio.load(data);
+            var filenames = [];
+            ch("td").has("img").find("a").each(function (i, anchor) {
+                var href = anchor.attribs["href"];
+                if (href.endsWith("/certificates/"))
+                    return;
+                filenames.push(href);
+            });
+            return filenames;
+        };
         Apple.prototype.getEVOIDList = function (version, data) {
             if (!data) {
                 var url = appleBaseURL + "security_certificates-" + version + "/certificates/evroot.config?txt";
@@ -929,6 +973,11 @@ var tl_create;
         };
         Apple.prototype.getTrustedCert = function (version, filename) {
             var url = appleBaseURL + "security_certificates-" + version + "/certificates/roots/" + filename;
+            var res = request("GET", url, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
+            return res.body.toString("base64");
+        };
+        Apple.prototype.getDistrustedCert = function (version, filename) {
+            var url = appleBaseURL + "security_certificates-" + version + "/certificates/distrusted/" + filename;
             var res = request("GET", url, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
             return res.body.toString("base64");
         };

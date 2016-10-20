@@ -47,6 +47,40 @@ namespace tl_create {
             return tl;
         }
 
+        getDisallowed(datatllist?: string, datadiscertlist?: string, skipfetch = false): TrustedList {
+            let tl = new TrustedList();
+
+            let tlVersion = this.getLatestVersion(datatllist);
+            let certnames = this.getDistrustedCertList(tlVersion, datadiscertlist);
+
+            if(skipfetch === false)
+                process.stdout.write("Fetching certificates");
+            for(let certname of certnames) {
+                let certraw = "";
+                let evpolicies: string[] = [];
+
+                if(skipfetch === false)
+                    process.stdout.write(".");
+
+                if(skipfetch === false)
+                    certraw = this.getDistrustedCert(tlVersion, certname);
+                let tl_cert: X509Certificate = {
+                    raw: certraw,
+                    trust: [],
+                    operator: decodeURI(certname.slice(0, -4)),
+                    source: "Apple",
+                    evpolicy: evpolicies
+                };
+
+                tl.AddCertificate(tl_cert);
+            }
+
+            if(skipfetch === false)
+                console.log();
+
+            return tl;
+        }
+
         getLatestVersion(data?: string): string {
             if(!data) {
                 let res = request("GET", appleBaseURL, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
@@ -96,6 +130,26 @@ namespace tl_create {
             return filenames;
         }
 
+        getDistrustedCertList(version: string, data?: string): string[] {
+            if(!data) {
+                let url = appleBaseURL + "security_certificates-" + version + "/certificates/distrusted/";
+                let res = request("GET", url, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
+                data = res.body.toString();
+            }
+            let ch = cheerio.load(data);
+            let filenames: string[] = [];
+
+            ch("td").has("img").find("a").each(function(i, anchor) {
+                let href = (<any>anchor.attribs)["href"];
+                if(href.endsWith("/certificates/"))
+                    return;
+
+                filenames.push(href);
+            });
+
+            return filenames;
+        }
+
         getEVOIDList(version: string, data?: string): IEVOID {
             if(!data) {
                 let url = appleBaseURL + "security_certificates-" + version + "/certificates/evroot.config?txt";
@@ -121,6 +175,12 @@ namespace tl_create {
 
         getTrustedCert(version: string, filename: string): string {
             let url = appleBaseURL + "security_certificates-" + version + "/certificates/roots/" + filename;
+            let res = request("GET", url, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
+            return res.body.toString("base64");
+        }
+
+        getDistrustedCert(version: string, filename: string): string {
+            let url = appleBaseURL + "security_certificates-" + version + "/certificates/distrusted/" + filename;
             let res = request("GET", url, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
             return res.body.toString("base64");
         }
