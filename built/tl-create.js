@@ -36,7 +36,10 @@ var tl_create;
         CKA_TRUST_IPSEC_TUNNEL: "CKA_TRUST_IPSEC_TUNNEL",
         CKA_TRUST_IPSEC_USER: "CKA_TRUST_IPSEC_USER",
         CKA_TRUST_TIME_STAMPING: "CKA_TRUST_TIME_STAMPING",
-        CKA_TRUST_STEP_UP_APPROVED: "CKA_TRUST_STEP_UP_APPROVED"
+        CKA_TRUST_STEP_UP_APPROVED: "CKA_TRUST_STEP_UP_APPROVED",
+        CKT_NSS_TRUSTED_DELEGATOR: "CKT_NSS_TRUSTED_DELEGATOR",
+        CKT_NSS_MUST_VERIFY_TRUST: "CKT_NSS_MUST_VERIFY_TRUST",
+        CKT_NSS_NOT_TRUSTED: "CKT_NSS_NOT_TRUSTED"
     };
     var MozillaTypes = {
         CK_BBOOL: "CK_BBOOL",
@@ -59,6 +62,12 @@ var tl_create;
             this.codeFilterList = codeFilter;
         }
         Mozilla.prototype.getTrusted = function (data) {
+            return this.getByTrustValue(data, MozillaAttributes.CKT_NSS_TRUSTED_DELEGATOR);
+        };
+        Mozilla.prototype.getDisallowed = function (data) {
+            return this.getByTrustValue(data, MozillaAttributes.CKT_NSS_NOT_TRUSTED);
+        };
+        Mozilla.prototype.getByTrustValue = function (data, trustval) {
             // console.log("parsing started "+ this.codeFilterList);
             var tl = new tl_create.TrustedList();
             if (data) {
@@ -101,12 +110,13 @@ var tl_create;
                 // add trust from ncc
                 for (var i in ncc) {
                     var m = /^CKA_TRUST_(\w+)/.exec(i);
-                    if (m && m[1] !== "STEP_UP_APPROVED")
+                    if (m && m[1] !== "STEP_UP_APPROVED" && ncc[i] === trustval)
                         tl_cert.trust.push(m[1]);
                 }
                 // console.log(tl_cert);
                 tl.AddCertificate(tl_cert);
             }
+            tl.filter(this.emptyTrustFilter);
             return tl;
         };
         Mozilla.prototype.findNcc = function (cert, nccs) {
@@ -196,6 +206,12 @@ var tl_create;
                 this.curIndex++;
             }
             return cert;
+        };
+        Mozilla.prototype.emptyTrustFilter = function (item, index) {
+            if (item.trust.length > 0)
+                return true;
+            else
+                return false;
         };
         return Mozilla;
     }());
@@ -849,7 +865,7 @@ var tl_create;
                     evpolicies = evroots[certname];
                 var tl_cert = {
                     raw: certraw,
-                    trust: [],
+                    trust: ["ANY"],
                     operator: decodeURI(certname.slice(0, -4)),
                     source: "Apple",
                     evpolicy: evpolicies
@@ -877,7 +893,7 @@ var tl_create;
                     certraw = this.getDistrustedCert(tlVersion, certname);
                 var tl_cert = {
                     raw: certraw,
-                    trust: [],
+                    trust: ["ANY"],
                     operator: decodeURI(certname.slice(0, -4)),
                     source: "Apple",
                     evpolicy: evpolicies

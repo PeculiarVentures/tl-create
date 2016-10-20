@@ -32,7 +32,7 @@ namespace tl_create {
 
                 let tl_cert: X509Certificate = {
                     raw: certraw,
-                    trust: [],
+                    trust: [ "ANY" ],
                     operator: decodeURI(certname.slice(0, -4)),
                     source: "Apple",
                     evpolicy: evpolicies
@@ -66,7 +66,7 @@ namespace tl_create {
                     certraw = this.getDistrustedCert(tlVersion, certname);
                 let tl_cert: X509Certificate = {
                     raw: certraw,
-                    trust: [],
+                    trust: [ "ANY" ],
                     operator: decodeURI(certname.slice(0, -4)),
                     source: "Apple",
                     evpolicy: evpolicies
