@@ -135,7 +135,10 @@ function parseMozillaTrusted() {
 }
 
 function parseMozillaDisallowed() {
-    throw "Mozilla disallowed certificates not yet implemented.";
+    console.log("Trust Lists: Mozilla");
+    var moz = new tl_create.Mozilla();
+    var tl = moz.getDisallowed();
+    return tl;
 }
 
 function parseMicrosoftTrusted() {
@@ -181,6 +184,8 @@ var filter = program.for.split(",");
 
 function trustFilter(item, index) {
     if (item.source === "EUTL")
+        return true;
+    if (item.trust.indexOf("ANY") !== -1)
         return true;
     for (var i in filter) {
         var f = filter[i];

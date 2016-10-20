@@ -14,14 +14,24 @@ var fs = require("fs");
 
 describe("Mozilla format", function () {
 
-    it("Parse incoming text", function () {
+    it("Parse incoming text for trusted roots", function () {
         // get static file
         var mozText = fs.readFileSync("./test/static/mozilla.txt", "utf8");
 
         var moz = new tl_create.Mozilla();
         var tl = moz.getTrusted(mozText);
-        
-        assert.equal(tl.Certificates.length, 177);
+
+        assert.equal(tl.Certificates.length, 157);
+    });
+
+    it("Parse incoming text for disallowed roots", function () {
+        // get static file
+        var mozText = fs.readFileSync("./test/static/mozilla.txt", "utf8");
+
+        var moz = new tl_create.Mozilla();
+        var tl = moz.getDisallowed(mozText);
+
+        assert.equal(tl.Certificates.length, 19);
     });
 
 })

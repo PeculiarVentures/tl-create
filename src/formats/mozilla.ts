@@ -32,7 +32,10 @@ namespace tl_create {
         CKA_TRUST_IPSEC_TUNNEL: "CKA_TRUST_IPSEC_TUNNEL",
         CKA_TRUST_IPSEC_USER: "CKA_TRUST_IPSEC_USER",
         CKA_TRUST_TIME_STAMPING: "CKA_TRUST_TIME_STAMPING",
-        CKA_TRUST_STEP_UP_APPROVED: "CKA_TRUST_STEP_UP_APPROVED"
+        CKA_TRUST_STEP_UP_APPROVED: "CKA_TRUST_STEP_UP_APPROVED",
+        CKT_NSS_TRUSTED_DELEGATOR: "CKT_NSS_TRUSTED_DELEGATOR",
+        CKT_NSS_MUST_VERIFY_TRUST: "CKT_NSS_MUST_VERIFY_TRUST",
+        CKT_NSS_NOT_TRUSTED: "CKT_NSS_NOT_TRUSTED"
     };
 
     const MozillaTypes = {
@@ -72,6 +75,14 @@ namespace tl_create {
         }
 
         getTrusted(data?: string): TrustedList {
+            return this.getByTrustValue(data, MozillaAttributes.CKT_NSS_TRUSTED_DELEGATOR);
+        }
+
+        getDisallowed(data?: string): TrustedList {
+            return this.getByTrustValue(data, MozillaAttributes.CKT_NSS_NOT_TRUSTED);
+        }
+
+        getByTrustValue(data: string, trustval: string): TrustedList {
             // console.log("parsing started "+ this.codeFilterList);
             let tl = new TrustedList();
 
@@ -116,12 +127,13 @@ namespace tl_create {
                 // add trust from ncc
                 for (let i in ncc) {
                     let m = /^CKA_TRUST_(\w+)/.exec(i);
-                    if (m && m[1] !== "STEP_UP_APPROVED")
+                    if (m && m[1] !== "STEP_UP_APPROVED" && ncc[i] === trustval)
                         tl_cert.trust.push(m[1]);
                 }
                 // console.log(tl_cert);
                 tl.AddCertificate(tl_cert);
             }
+            tl.filter(this.emptyTrustFilter);
             return tl;
         }
 
@@ -220,6 +232,13 @@ namespace tl_create {
                 this.curIndex++;
             }
             return cert;
+        }
+
+        emptyTrustFilter(item: X509Certificate, index: number): boolean {
+            if (item.trust.length > 0)
+                return true;
+            else
+                return false;
         }
     }
 
