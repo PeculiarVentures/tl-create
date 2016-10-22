@@ -1,5 +1,5 @@
 namespace tl_create {
-    const euURL = "http://ec.europa.eu/information_society/newsroom/cf/dae/document.cfm?doc_id=1789";
+    const euURL = "https://ec.europa.eu/information_society/policy/esignature/trusted-list/tl-mp.xml";
 
     export class EUTL {
 
