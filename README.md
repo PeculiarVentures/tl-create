@@ -4,6 +4,7 @@
 [![Build Status](https://travis-ci.org/PeculiarVentures/tl-create.svg?branch=master)](https://travis-ci.org/PeculiarVentures/tl-create)
 [![NPM version](https://badge.fury.io/js/tl-create.svg)](http://badge.fury.io/tl-create)
 
+[![NPM](https://nodei.co/npm-dl/tl-create.png?months=2&height=2)](https://nodei.co/npm/tl-create/)
 
 A cross platform command line tool to create a X.509 trust list from various trust stores.
 
