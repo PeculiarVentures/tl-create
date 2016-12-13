@@ -219,7 +219,7 @@ var tl_create;
 })(tl_create || (tl_create = {}));
 var tl_create;
 (function (tl_create) {
-    var euURL = "http://ec.europa.eu/information_society/newsroom/cf/dae/document.cfm?doc_id=1789";
+    var euURL = "https://ec.europa.eu/information_society/policy/esignature/trusted-list/tl-mp.xml";
     var EUTL = (function () {
         function EUTL() {
             this.TrustServiceStatusList = null;
