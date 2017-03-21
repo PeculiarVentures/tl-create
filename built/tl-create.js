@@ -951,7 +951,7 @@ var tl_create;
             var filenames = [];
             ch("td").has("img").find("a").each(function (i, anchor) {
                 var href = anchor.attribs["href"];
-                if (href.endsWith("/certificates/") || (href === "AppleDEVID.cer"))
+                if (href.endsWith("/certificates/") || href.endsWith("/../") || (href === "AppleDEVID.cer"))
                     return;
                 filenames.push(href);
             });
@@ -967,7 +967,7 @@ var tl_create;
             var filenames = [];
             ch("td").has("img").find("a").each(function (i, anchor) {
                 var href = anchor.attribs["href"];
-                if (href.endsWith("/certificates/"))
+                if (href.endsWith("/certificates/") || href.endsWith("/../"))
                     return;
                 filenames.push(href);
             });
@@ -1079,4 +1079,3 @@ var tl_create;
 })(tl_create || (tl_create = {}));
 if (typeof module !== "undefined")
     module.exports = tl_create;
-//# sourceMappingURL=tl-create.js.map
