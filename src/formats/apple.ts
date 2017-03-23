@@ -121,7 +121,7 @@ namespace tl_create {
 
             ch("td").has("img").find("a").each(function(i, anchor) {
                 let href = (<any>anchor.attribs)["href"];
-                if(href.endsWith("/certificates/") || (href === "AppleDEVID.cer"))
+                if(href.endsWith("/certificates/") || href.endsWith("/../") || (href === "AppleDEVID.cer"))
                     return;
 
                 filenames.push(href);
@@ -141,7 +141,7 @@ namespace tl_create {
 
             ch("td").has("img").find("a").each(function(i, anchor) {
                 let href = (<any>anchor.attribs)["href"];
-                if(href.endsWith("/certificates/"))
+                if(href.endsWith("/certificates/") || href.endsWith("/../"))
                     return;
 
                 filenames.push(href);

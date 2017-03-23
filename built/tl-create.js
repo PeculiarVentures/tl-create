@@ -1,8 +1,13 @@
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var tl_create;
 (function (tl_create) {
     var MozillaAttributes = {
@@ -39,7 +44,8 @@ var tl_create;
         CKA_TRUST_STEP_UP_APPROVED: "CKA_TRUST_STEP_UP_APPROVED",
         CKT_NSS_TRUSTED_DELEGATOR: "CKT_NSS_TRUSTED_DELEGATOR",
         CKT_NSS_MUST_VERIFY_TRUST: "CKT_NSS_MUST_VERIFY_TRUST",
-        CKT_NSS_NOT_TRUSTED: "CKT_NSS_NOT_TRUSTED"
+        CKT_NSS_NOT_TRUSTED: "CKT_NSS_NOT_TRUSTED",
+        CKA_NSS_MOZILLA_CA_POLICY: "CKA_NSS_MOZILLA_CA_POLICY"
     };
     var MozillaTypes = {
         CK_BBOOL: "CK_BBOOL",
@@ -256,7 +262,7 @@ var tl_create;
     var XmlObject = (function (_super) {
         __extends(XmlObject, _super);
         function XmlObject() {
-            _super.apply(this, arguments);
+            return _super !== null && _super.apply(this, arguments) || this;
         }
         XmlObject.prototype.GetAttribute = function (node, name, defaultValue) {
             if (defaultValue === void 0) { defaultValue = null; }
@@ -332,10 +338,11 @@ var tl_create;
     var TrustServiceStatusList = (function (_super) {
         __extends(TrustServiceStatusList, _super);
         function TrustServiceStatusList() {
-            _super.apply(this, arguments);
-            this.Id = null;
-            this.TSLTag = null;
-            this.SchemaInformation = null;
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.Id = null;
+            _this.TSLTag = null;
+            _this.SchemaInformation = null;
+            return _this;
         }
         TrustServiceStatusList.prototype.LoadXml = function (value) {
             if (value == null)
@@ -368,8 +375,9 @@ var tl_create;
     var SchemeInformation = (function (_super) {
         __extends(SchemeInformation, _super);
         function SchemeInformation() {
-            _super.apply(this, arguments);
-            this.Pointers = [];
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.Pointers = [];
+            return _this;
         }
         SchemeInformation.prototype.LoadXml = function (value) {
             if (value == null)
@@ -426,10 +434,11 @@ var tl_create;
     var Pointer = (function (_super) {
         __extends(Pointer, _super);
         function Pointer() {
-            _super.apply(this, arguments);
-            this.Location = null;
-            this.X509Certificates = [];
-            this.AdditionalInformation = null;
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.Location = null;
+            _this.X509Certificates = [];
+            _this.AdditionalInformation = null;
+            return _this;
         }
         Pointer.prototype.LoadXml = function (value) {
             if (value == null)
@@ -462,11 +471,12 @@ var tl_create;
     var AdditionalInformation = (function (_super) {
         __extends(AdditionalInformation, _super);
         function AdditionalInformation() {
-            _super.apply(this, arguments);
-            this.TSLType = null;
-            this.SchemeTerritory = null;
-            this.SchemeOperatorName = new SchemeOperatorName();
-            this.SchemeTypeCommunityRules = [];
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.TSLType = null;
+            _this.SchemeTerritory = null;
+            _this.SchemeOperatorName = new SchemeOperatorName();
+            _this.SchemeTypeCommunityRules = [];
+            return _this;
         }
         AdditionalInformation.prototype.LoadXml = function (value) {
             if (value == null)
@@ -515,8 +525,9 @@ var tl_create;
     var MultiLangType = (function (_super) {
         __extends(MultiLangType, _super);
         function MultiLangType() {
-            _super.apply(this, arguments);
-            this.m_elements = [];
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.m_elements = [];
+            return _this;
         }
         MultiLangType.prototype.GetItem = function (lang) {
             for (var _i = 0, _a = this.m_elements; _i < _a.length; _i++) {
@@ -538,7 +549,7 @@ var tl_create;
     var SchemeOperatorName = (function (_super) {
         __extends(SchemeOperatorName, _super);
         function SchemeOperatorName() {
-            _super.apply(this, arguments);
+            return _super !== null && _super.apply(this, arguments) || this;
         }
         SchemeOperatorName.prototype.LoadXml = function (value) {
             if (value == null)
@@ -941,7 +952,7 @@ var tl_create;
             var filenames = [];
             ch("td").has("img").find("a").each(function (i, anchor) {
                 var href = anchor.attribs["href"];
-                if (href.endsWith("/certificates/") || (href === "AppleDEVID.cer"))
+                if (href.endsWith("/certificates/") || href.endsWith("/../") || (href === "AppleDEVID.cer"))
                     return;
                 filenames.push(href);
             });
@@ -957,7 +968,7 @@ var tl_create;
             var filenames = [];
             ch("td").has("img").find("a").each(function (i, anchor) {
                 var href = anchor.attribs["href"];
-                if (href.endsWith("/certificates/"))
+                if (href.endsWith("/certificates/") || href.endsWith("/../"))
                     return;
                 filenames.push(href);
             });
