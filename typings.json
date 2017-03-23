@@ -1,6 +1,9 @@
 {
     "name": "tl-create",
-    "dependencies": {},
+    "dependencies": {
+        "asn1js": "registry:dt/asn1js#0.0.0+20161101131123",
+        "pvutils": "registry:dt/pvutils#0.0.0+20161101131123"
+    },
     "globalDependencies": {
         "node": "registry:env/node#4.0.0+20160813135048",
         "xadesjs": "registry:dt/xadesjs#1.0.0+20160509153344",

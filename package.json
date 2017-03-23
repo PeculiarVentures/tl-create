@@ -18,8 +18,8 @@
     "xadesjs": "^1.0.2",
     "xmldom-alpha": "^0.1.23",
     "temp": "^0.8.3",
-    "node.extend": "^1.1.6",
-    "asn1js": "^1.2.12",
+    "asn1js": "^2.0.12",
+    "pvutils": "latest",
     "cheerio": "^0.22.0"
   },
   "devDependencies": {},

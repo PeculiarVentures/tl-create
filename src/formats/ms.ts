@@ -1,59 +1,60 @@
-/// <reference path="asn1js.d.ts" />
 /// <reference path="sync-request.d.ts" />
 
 let fs = require("fs");
 let temp = require("temp");
 let path = require("path");
 let child_process = require("child_process");
+let Asn1js = require("asn1js");
+let PvUtils = require("pvutils");
 
 namespace tl_create {
-    const ctl_schema = new asn1js.org.pkijs.asn1.SEQUENCE({
+    const ctl_schema = new Asn1js.Sequence({
         name: "CTL",
         value: [
-            new asn1js.org.pkijs.asn1.ANY({
+            new Asn1js.Any({
                 name: "dummy1"
             }),
-            new asn1js.org.pkijs.asn1.INTEGER({
+            new Asn1js.Integer({
                 name: "unknown"
             }),
-            new asn1js.org.pkijs.asn1.UTCTIME({
+            new Asn1js.UTCTime({
                 name: "GenDate"
             }),
-            new asn1js.org.pkijs.asn1.ANY({
+            new Asn1js.Any({
                 name: "dummy2"
             }),
-            new asn1js.org.pkijs.asn1.SEQUENCE({
+            new Asn1js.Sequence({
                 name: "InnerCTL",
                 value: [
-                    new asn1js.org.pkijs.asn1.REPEATED({
+                    new Asn1js.Repeated({
                         name: "CTLEntry",
-                        value: new asn1js.org.pkijs.asn1.ANY()
+                        value: new Asn1js.Any()
                     })
                 ]
             })
         ]
     });
 
-    const ctlentry_schema = new asn1js.org.pkijs.asn1.SEQUENCE({
+    const ctlentry_schema = new Asn1js.Sequence({
         name: "CTLEntry",
         value: [
-            new asn1js.org.pkijs.asn1.OCTETSTRING({
+            new Asn1js.OctetString({
                 name: "CertID"
             }),
-            new asn1js.org.pkijs.asn1.SET({
+            new Asn1js.Set({
                 name: "MetaData",
                 value: [
-                    new asn1js.org.pkijs.asn1.REPEATED({
+                    new Asn1js.Repeated({
                         name: "CertMetaData",
-                        value: new asn1js.org.pkijs.asn1.SEQUENCE({
+                        value: new Asn1js.Sequence({
                             value: [
-                                new asn1js.org.pkijs.asn1.OID({
+                                new Asn1js.ObjectIdentifier({
                                     name: "MetaDataType"
                                 }),
-                                new asn1js.org.pkijs.asn1.SET({
+                                new Asn1js.Set({
                                     name: "MetaDataValue",
                                     value: [
-                                        new asn1js.org.pkijs.asn1.OCTETSTRING({
+                                        new Asn1js.OctetString({
                                             name: "RealContent"
                                         })
                                     ]
@@ -66,27 +67,27 @@ namespace tl_create {
         ]
     });
 
-    const eku_schema = new asn1js.org.pkijs.asn1.SEQUENCE({
+    const eku_schema = new Asn1js.Sequence({
         name: "EKU",
         value: [
-            new asn1js.org.pkijs.asn1.REPEATED({
+            new Asn1js.Repeated({
                 name: "OID",
-                value: new asn1js.org.pkijs.asn1.OID()
+                value: new Asn1js.ObjectIdentifier()
             })
         ]
     });
 
-    const evoid_schema = new asn1js.org.pkijs.asn1.SEQUENCE({
+    const evoid_schema = new Asn1js.Sequence({
         name: "EVOIDS",
         value: [
-            new asn1js.org.pkijs.asn1.REPEATED({
+            new Asn1js.Repeated({
                 name: "PolicyThing",
-                value: new asn1js.org.pkijs.asn1.SEQUENCE({
+                value: new Asn1js.Sequence({
                     value: [
-                        new asn1js.org.pkijs.asn1.OID({
+                        new Asn1js.ObjectIdentifier({
                             name: "EVOID"
                         }),
-                        new asn1js.org.pkijs.asn1.ANY({
+                        new Asn1js.Any({
                             name: "dummy"
                         })
                     ]
@@ -95,40 +96,40 @@ namespace tl_create {
         ]
     });
 
-    const dis_ctl_schema = new asn1js.org.pkijs.asn1.SEQUENCE({
+    const dis_ctl_schema = new Asn1js.Sequence({
         name: "DisallowedCTL",
         value: [
-            new asn1js.org.pkijs.asn1.ANY({
+            new Asn1js.Any({
                 name: "dummy1"
             }),
-            new asn1js.org.pkijs.asn1.OCTETSTRING({
+            new Asn1js.OctetString({
                 name: "dummy2"
             }),
-            new asn1js.org.pkijs.asn1.INTEGER({
+            new Asn1js.Integer({
                 name: "unknown"
             }),
-            new asn1js.org.pkijs.asn1.UTCTIME({
+            new Asn1js.UTCTime({
                 name: "GenDate"
             }),
-            new asn1js.org.pkijs.asn1.ANY({
+            new Asn1js.Any({
                 name: "dummy3"
             }),
-            new asn1js.org.pkijs.asn1.SEQUENCE({
+            new Asn1js.Sequence({
                 name: "InnerCTL",
                 value: [
-                    new asn1js.org.pkijs.asn1.REPEATED({
+                    new Asn1js.Repeated({
                         name: "CTLEntry",
-                        value: new asn1js.org.pkijs.asn1.ANY()
+                        value: new Asn1js.Any()
                     })
                 ]
             })
         ]
     });
 
-    const dis_ctlentry_schema = new asn1js.org.pkijs.asn1.SEQUENCE({
+    const dis_ctlentry_schema = new Asn1js.Sequence({
         name: "DisallowedCTLEntry",
         value: [
-            new asn1js.org.pkijs.asn1.OCTETSTRING({
+            new Asn1js.OctetString({
                 name: "CertID"
             })
         ]
@@ -167,7 +168,7 @@ namespace tl_create {
 
             let variant: any;
             for(let i = 0; i < databuf.buffer.byteLength; i++) {
-                variant = asn1js.org.pkijs.verifySchema(databuf.buffer.slice(i), ctl_schema);
+                variant = Asn1js.verifySchema(databuf.buffer.slice(i), ctl_schema);
                 if(variant.verified === true)
                     break;
             }
@@ -180,9 +181,9 @@ namespace tl_create {
             for(let ctlentry of variant.result.CTLEntry) {
                 if(skipfetch == false)
                     process.stdout.write(".");
-                let ctlentry_parsed = asn1js.org.pkijs.verifySchema(ctlentry.toBER(), ctlentry_schema);
+                let ctlentry_parsed = Asn1js.verifySchema(ctlentry.toBER(), ctlentry_schema);
 
-                let certid = asn1js.org.pkijs.bufferToHexCodes(ctlentry_parsed.result.CertID.value_block.value_hex);
+                let certid = PvUtils.bufferToHexCodes(ctlentry_parsed.result.CertID.valueBlock.valueHex);
 
                 let certraw = "";
                 if(skipfetch == false)
@@ -196,13 +197,13 @@ namespace tl_create {
                 };
 
                 for(let metadata of ctlentry_parsed.result.CertMetaData) {
-                    let metadata_oid = metadata.value_block.value[0].value_block.toString();
+                    let metadata_oid = metadata.valueBlock.value[0].valueBlock.toString();
 
                     // Load EKUs
                     if(metadata_oid === "1.3.6.1.4.1.311.10.11.9") {
-                        let ekus = asn1js.org.pkijs.verifySchema(metadata.value_block.value[1].value_block.value[0].value_block.value_hex, eku_schema);
+                        let ekus = Asn1js.verifySchema(metadata.valueBlock.value[1].valueBlock.value[0].valueBlock.valueHex, eku_schema);
                         for(let eku of ekus.result.OID) {
-                            let eku_oid = eku.value_block.toString();
+                            let eku_oid = eku.valueBlock.toString();
                             if(eku_oid in EKU_oids)
                                 tl_cert.trust.push((<any> EKU_oids)[eku_oid]);
                         }
@@ -210,14 +211,14 @@ namespace tl_create {
 
                     // Load friendly name
                     if(metadata_oid === "1.3.6.1.4.1.311.10.11.11") {
-                        tl_cert.operator = String.fromCharCode.apply(null, new Uint16Array(metadata.value_block.value[1].value_block.value[0].value_block.value_hex)).slice(0, -1);
+                        tl_cert.operator = String.fromCharCode.apply(null, new Uint16Array(metadata.valueBlock.value[1].valueBlock.value[0].valueBlock.valueHex)).slice(0, -1);
                     }
 
                     // Load EV Policy OIDs
                     if(metadata_oid === "1.3.6.1.4.1.311.10.11.83") {
-                        let evoids = asn1js.org.pkijs.verifySchema(metadata.value_block.value[1].value_block.value[0].value_block.value_hex, evoid_schema);
+                        let evoids = Asn1js.verifySchema(metadata.valueBlock.value[1].valueBlock.value[0].valueBlock.valueHex, evoid_schema);
                         for(let evoid of evoids.result.PolicyThing) {
-                            tl_cert.evpolicy.push(evoid.value_block.value[0].value_block.toString());
+                            tl_cert.evpolicy.push(evoid.valueBlock.value[0].valueBlock.toString());
                         }
                     }
                 }
@@ -241,7 +242,7 @@ namespace tl_create {
 
             let variant: any;
             for(let i = 0; i < databuf.buffer.byteLength; i++) {
-                variant = asn1js.org.pkijs.verifySchema(databuf.buffer.slice(i), dis_ctl_schema);
+                variant = Asn1js.verifySchema(databuf.buffer.slice(i), dis_ctl_schema);
                 if(variant.verified === true)
                     break;
             }
@@ -255,9 +256,9 @@ namespace tl_create {
                 if(skipfetch == false)
                     process.stdout.write(".");
 
-                let ctlentry_parsed = asn1js.org.pkijs.verifySchema(ctlentry.toBER(), dis_ctlentry_schema);
+                let ctlentry_parsed = Asn1js.verifySchema(ctlentry.toBER(), dis_ctlentry_schema);
 
-                let certid = asn1js.org.pkijs.bufferToHexCodes(ctlentry_parsed.result.CertID.value_block.value_hex);
+                let certid = PvUtils.bufferToHexCodes(ctlentry_parsed.result.CertID.valueBlock.valueHex);
 
                 let certraw = "";
                 if(skipfetch == false)

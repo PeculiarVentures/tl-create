@@ -219,7 +219,7 @@ var tl_create;
 })(tl_create || (tl_create = {}));
 var tl_create;
 (function (tl_create) {
-    var euURL = "http://ec.europa.eu/information_society/newsroom/cf/dae/document.cfm?doc_id=1789";
+    var euURL = "https://ec.europa.eu/information_society/policy/esignature/trusted-list/tl-mp.xml";
     var EUTL = (function () {
         function EUTL() {
             this.TrustServiceStatusList = null;
@@ -560,60 +560,61 @@ var tl_create;
         return SchemeOperatorName;
     }(MultiLangType));
 })(tl_create || (tl_create = {}));
-/// <reference path="asn1js.d.ts" />
 /// <reference path="sync-request.d.ts" />
 var fs = require("fs");
 var temp = require("temp");
 var path = require("path");
 var child_process = require("child_process");
+var Asn1js = require("asn1js");
+var PvUtils = require("pvutils");
 var tl_create;
 (function (tl_create) {
-    var ctl_schema = new asn1js.org.pkijs.asn1.SEQUENCE({
+    var ctl_schema = new Asn1js.Sequence({
         name: "CTL",
         value: [
-            new asn1js.org.pkijs.asn1.ANY({
+            new Asn1js.Any({
                 name: "dummy1"
             }),
-            new asn1js.org.pkijs.asn1.INTEGER({
+            new Asn1js.Integer({
                 name: "unknown"
             }),
-            new asn1js.org.pkijs.asn1.UTCTIME({
+            new Asn1js.UTCTime({
                 name: "GenDate"
             }),
-            new asn1js.org.pkijs.asn1.ANY({
+            new Asn1js.Any({
                 name: "dummy2"
             }),
-            new asn1js.org.pkijs.asn1.SEQUENCE({
+            new Asn1js.Sequence({
                 name: "InnerCTL",
                 value: [
-                    new asn1js.org.pkijs.asn1.REPEATED({
+                    new Asn1js.Repeated({
                         name: "CTLEntry",
-                        value: new asn1js.org.pkijs.asn1.ANY()
+                        value: new Asn1js.Any()
                     })
                 ]
             })
         ]
     });
-    var ctlentry_schema = new asn1js.org.pkijs.asn1.SEQUENCE({
+    var ctlentry_schema = new Asn1js.Sequence({
         name: "CTLEntry",
         value: [
-            new asn1js.org.pkijs.asn1.OCTETSTRING({
+            new Asn1js.OctetString({
                 name: "CertID"
             }),
-            new asn1js.org.pkijs.asn1.SET({
+            new Asn1js.Set({
                 name: "MetaData",
                 value: [
-                    new asn1js.org.pkijs.asn1.REPEATED({
+                    new Asn1js.Repeated({
                         name: "CertMetaData",
-                        value: new asn1js.org.pkijs.asn1.SEQUENCE({
+                        value: new Asn1js.Sequence({
                             value: [
-                                new asn1js.org.pkijs.asn1.OID({
+                                new Asn1js.ObjectIdentifier({
                                     name: "MetaDataType"
                                 }),
-                                new asn1js.org.pkijs.asn1.SET({
+                                new Asn1js.Set({
                                     name: "MetaDataValue",
                                     value: [
-                                        new asn1js.org.pkijs.asn1.OCTETSTRING({
+                                        new Asn1js.OctetString({
                                             name: "RealContent"
                                         })
                                     ]
@@ -625,26 +626,26 @@ var tl_create;
             })
         ]
     });
-    var eku_schema = new asn1js.org.pkijs.asn1.SEQUENCE({
+    var eku_schema = new Asn1js.Sequence({
         name: "EKU",
         value: [
-            new asn1js.org.pkijs.asn1.REPEATED({
+            new Asn1js.Repeated({
                 name: "OID",
-                value: new asn1js.org.pkijs.asn1.OID()
+                value: new Asn1js.ObjectIdentifier()
             })
         ]
     });
-    var evoid_schema = new asn1js.org.pkijs.asn1.SEQUENCE({
+    var evoid_schema = new Asn1js.Sequence({
         name: "EVOIDS",
         value: [
-            new asn1js.org.pkijs.asn1.REPEATED({
+            new Asn1js.Repeated({
                 name: "PolicyThing",
-                value: new asn1js.org.pkijs.asn1.SEQUENCE({
+                value: new Asn1js.Sequence({
                     value: [
-                        new asn1js.org.pkijs.asn1.OID({
+                        new Asn1js.ObjectIdentifier({
                             name: "EVOID"
                         }),
-                        new asn1js.org.pkijs.asn1.ANY({
+                        new Asn1js.Any({
                             name: "dummy"
                         })
                     ]
@@ -652,39 +653,39 @@ var tl_create;
             })
         ]
     });
-    var dis_ctl_schema = new asn1js.org.pkijs.asn1.SEQUENCE({
+    var dis_ctl_schema = new Asn1js.Sequence({
         name: "DisallowedCTL",
         value: [
-            new asn1js.org.pkijs.asn1.ANY({
+            new Asn1js.Any({
                 name: "dummy1"
             }),
-            new asn1js.org.pkijs.asn1.OCTETSTRING({
+            new Asn1js.OctetString({
                 name: "dummy2"
             }),
-            new asn1js.org.pkijs.asn1.INTEGER({
+            new Asn1js.Integer({
                 name: "unknown"
             }),
-            new asn1js.org.pkijs.asn1.UTCTIME({
+            new Asn1js.UTCTime({
                 name: "GenDate"
             }),
-            new asn1js.org.pkijs.asn1.ANY({
+            new Asn1js.Any({
                 name: "dummy3"
             }),
-            new asn1js.org.pkijs.asn1.SEQUENCE({
+            new Asn1js.Sequence({
                 name: "InnerCTL",
                 value: [
-                    new asn1js.org.pkijs.asn1.REPEATED({
+                    new Asn1js.Repeated({
                         name: "CTLEntry",
-                        value: new asn1js.org.pkijs.asn1.ANY()
+                        value: new Asn1js.Any()
                     })
                 ]
             })
         ]
     });
-    var dis_ctlentry_schema = new asn1js.org.pkijs.asn1.SEQUENCE({
+    var dis_ctlentry_schema = new Asn1js.Sequence({
         name: "DisallowedCTLEntry",
         value: [
-            new asn1js.org.pkijs.asn1.OCTETSTRING({
+            new Asn1js.OctetString({
                 name: "CertID"
             })
         ]
@@ -720,7 +721,7 @@ var tl_create;
                 databuf = new Buffer(data, "binary");
             var variant;
             for (var i = 0; i < databuf.buffer.byteLength; i++) {
-                variant = asn1js.org.pkijs.verifySchema(databuf.buffer.slice(i), ctl_schema);
+                variant = Asn1js.verifySchema(databuf.buffer.slice(i), ctl_schema);
                 if (variant.verified === true)
                     break;
             }
@@ -732,8 +733,8 @@ var tl_create;
                 var ctlentry = _a[_i];
                 if (skipfetch == false)
                     process.stdout.write(".");
-                var ctlentry_parsed = asn1js.org.pkijs.verifySchema(ctlentry.toBER(), ctlentry_schema);
-                var certid = asn1js.org.pkijs.bufferToHexCodes(ctlentry_parsed.result.CertID.value_block.value_hex);
+                var ctlentry_parsed = Asn1js.verifySchema(ctlentry.toBER(), ctlentry_schema);
+                var certid = PvUtils.bufferToHexCodes(ctlentry_parsed.result.CertID.valueBlock.valueHex);
                 var certraw = "";
                 if (skipfetch == false)
                     certraw = this.fetchcert(certid);
@@ -746,27 +747,27 @@ var tl_create;
                 };
                 for (var _b = 0, _c = ctlentry_parsed.result.CertMetaData; _b < _c.length; _b++) {
                     var metadata = _c[_b];
-                    var metadata_oid = metadata.value_block.value[0].value_block.toString();
+                    var metadata_oid = metadata.valueBlock.value[0].valueBlock.toString();
                     // Load EKUs
                     if (metadata_oid === "1.3.6.1.4.1.311.10.11.9") {
-                        var ekus = asn1js.org.pkijs.verifySchema(metadata.value_block.value[1].value_block.value[0].value_block.value_hex, eku_schema);
+                        var ekus = Asn1js.verifySchema(metadata.valueBlock.value[1].valueBlock.value[0].valueBlock.valueHex, eku_schema);
                         for (var _d = 0, _e = ekus.result.OID; _d < _e.length; _d++) {
                             var eku = _e[_d];
-                            var eku_oid = eku.value_block.toString();
+                            var eku_oid = eku.valueBlock.toString();
                             if (eku_oid in EKU_oids)
                                 tl_cert.trust.push(EKU_oids[eku_oid]);
                         }
                     }
                     // Load friendly name
                     if (metadata_oid === "1.3.6.1.4.1.311.10.11.11") {
-                        tl_cert.operator = String.fromCharCode.apply(null, new Uint16Array(metadata.value_block.value[1].value_block.value[0].value_block.value_hex)).slice(0, -1);
+                        tl_cert.operator = String.fromCharCode.apply(null, new Uint16Array(metadata.valueBlock.value[1].valueBlock.value[0].valueBlock.valueHex)).slice(0, -1);
                     }
                     // Load EV Policy OIDs
                     if (metadata_oid === "1.3.6.1.4.1.311.10.11.83") {
-                        var evoids = asn1js.org.pkijs.verifySchema(metadata.value_block.value[1].value_block.value[0].value_block.value_hex, evoid_schema);
+                        var evoids = Asn1js.verifySchema(metadata.valueBlock.value[1].valueBlock.value[0].valueBlock.valueHex, evoid_schema);
                         for (var _f = 0, _g = evoids.result.PolicyThing; _f < _g.length; _f++) {
                             var evoid = _g[_f];
-                            tl_cert.evpolicy.push(evoid.value_block.value[0].value_block.toString());
+                            tl_cert.evpolicy.push(evoid.valueBlock.value[0].valueBlock.toString());
                         }
                     }
                 }
@@ -786,7 +787,7 @@ var tl_create;
                 databuf = new Buffer(data, "binary");
             var variant;
             for (var i = 0; i < databuf.buffer.byteLength; i++) {
-                variant = asn1js.org.pkijs.verifySchema(databuf.buffer.slice(i), dis_ctl_schema);
+                variant = Asn1js.verifySchema(databuf.buffer.slice(i), dis_ctl_schema);
                 if (variant.verified === true)
                     break;
             }
@@ -798,8 +799,8 @@ var tl_create;
                 var ctlentry = _a[_i];
                 if (skipfetch == false)
                     process.stdout.write(".");
-                var ctlentry_parsed = asn1js.org.pkijs.verifySchema(ctlentry.toBER(), dis_ctlentry_schema);
-                var certid = asn1js.org.pkijs.bufferToHexCodes(ctlentry_parsed.result.CertID.value_block.value_hex);
+                var ctlentry_parsed = Asn1js.verifySchema(ctlentry.toBER(), dis_ctlentry_schema);
+                var certid = PvUtils.bufferToHexCodes(ctlentry_parsed.result.CertID.valueBlock.valueHex);
                 var certraw = "";
                 if (skipfetch == false)
                     certraw = this.fetchcert(certid);
