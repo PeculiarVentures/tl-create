@@ -4,7 +4,8 @@
         "target": "es5",
         "noImplicitAny": true,
         "sourceMap": false,
-        "outFile": "built/tl-create.js"
+        "outFile": "built/tl-create.js",
+        "moduleResolution": "node"
     },
     "files": [
         "typings/index.d.ts",

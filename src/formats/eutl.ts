@@ -1,3 +1,6 @@
+/// <reference types="xadesjs" />
+/// <reference types="xml-core" />
+
 namespace tl_create {
     const euURL = "https://ec.europa.eu/information_society/policy/esignature/trusted-list/tl-mp.xml";
 
@@ -29,9 +32,9 @@ namespace tl_create {
         }
     }
 
-    export let XmlNodeType = xadesjs.XmlNodeType;
+    export let XmlNodeType = XmlCore.XmlNodeType;
 
-    abstract class XmlObject extends xadesjs.XmlObject {
+    abstract class XmlObject {
 
         protected GetAttribute(node: Element, name: string, defaultValue: string = null): string {
             return node.hasAttribute(name) ? node.getAttribute(name) : defaultValue;
@@ -142,12 +145,12 @@ namespace tl_create {
 
         CheckSignature(): PromiseLike<boolean> {
 
-            let xmlSignature = this.m_element.getElementsByTagNameNS(xadesjs.XmlSignature.NamespaceURI, "Signature");
+            let xmlSignature = this.m_element.getElementsByTagNameNS(XmlDSigJs.XmlSignature.NamespaceURI, "Signature");
 
-            // TODO: change this.m_element.ownerDocument -> this.m_element after xadesjs fix;
-            let sxml = new xadesjs.SignedXml(this.m_element.ownerDocument);
+            // TODO: change this.m_element.ownerDocument -> this.m_element after XAdES fix;
+            let sxml = new XAdES.SignedXml(this.m_element.ownerDocument);
             sxml.LoadXml(xmlSignature[0]);
-            return sxml.CheckSignature();
+            return sxml.Verify();
         }
 
     }

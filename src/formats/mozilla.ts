@@ -1,3 +1,4 @@
+/// <reference types="xml-core" />
 
 namespace tl_create {
 
@@ -196,7 +197,9 @@ namespace tl_create {
                             res.push(parseInt(item, 8));
                         }
                     }
-                    return xadesjs.Convert.ToBase64String(xadesjs.Convert.FromBufferString(new Uint8Array(res)));
+                    //return XAdES.Convert.ToBase64String(XAdES.Convert.FromBufferString(new Uint8Array(res)));
+                    //return XAdES.Convert.ToBase64(XAdES.Convert.ToString(new Uint8Array(res)));
+                    return XmlCore.Convert.ToBase64(new Uint8Array(res));
                 case MozillaTypes.UTF8:
                     // remove " from begin and end of UTF8 string
                     let utf8 = _value.slice(1, _value.length - 1).replace(/\%/g, "%25").replace(/\\x/g, "%");

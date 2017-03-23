@@ -5,8 +5,6 @@
         "pvutils": "registry:dt/pvutils#0.0.0+20161101131123"
     },
     "globalDependencies": {
-        "node": "registry:env/node#4.0.0+20160813135048",
-        "xadesjs": "registry:dt/xadesjs#1.0.0+20160509153344",
         "cheerio": "registry:dt/cheerio#0.17.0+20160930124405"
     }
 }

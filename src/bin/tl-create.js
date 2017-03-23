@@ -3,10 +3,11 @@
 var program = require('commander');
 var util = require('util');
 global.request = require('sync-request');
-global.xadesjs = require('xadesjs');
+global.XAdES = require('xadesjs');
 global.cheerio = require("cheerio");
 global.DOMParser = require('xmldom-alpha').DOMParser;
 global.XMLSerializer = require('xmldom-alpha').XMLSerializer;
+global.XmlCore = require('xml-core');
 var WebCrypto = require("node-webcrypto-ossl");
 xadesjs.Application.setEngine("OpenSSL", new WebCrypto());
 var tl_create = require('../../built/tl-create.js');

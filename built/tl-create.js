@@ -8,6 +8,7 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+/// <reference types="xml-core" />
 var tl_create;
 (function (tl_create) {
     var MozillaAttributes = {
@@ -179,7 +180,9 @@ var tl_create;
                             res.push(parseInt(item, 8));
                         }
                     }
-                    return xadesjs.Convert.ToBase64String(xadesjs.Convert.FromBufferString(new Uint8Array(res)));
+                    //return XAdES.Convert.ToBase64String(XAdES.Convert.FromBufferString(new Uint8Array(res)));
+                    //return XAdES.Convert.ToBase64(XAdES.Convert.ToString(new Uint8Array(res)));
+                    return XmlCore.Convert.ToBase64(new Uint8Array(res));
                 case MozillaTypes.UTF8:
                     // remove " from begin and end of UTF8 string
                     var utf8 = _value.slice(1, _value.length - 1).replace(/\%/g, "%25").replace(/\\x/g, "%");
@@ -223,6 +226,8 @@ var tl_create;
     }());
     tl_create.Mozilla = Mozilla;
 })(tl_create || (tl_create = {}));
+/// <reference types="xadesjs" />
+/// <reference types="xml-core" />
 var tl_create;
 (function (tl_create) {
     var euURL = "https://ec.europa.eu/information_society/policy/esignature/trusted-list/tl-mp.xml";
@@ -258,11 +263,9 @@ var tl_create;
         return EUTL;
     }());
     tl_create.EUTL = EUTL;
-    tl_create.XmlNodeType = xadesjs.XmlNodeType;
-    var XmlObject = (function (_super) {
-        __extends(XmlObject, _super);
+    tl_create.XmlNodeType = XmlCore.XmlNodeType;
+    var XmlObject = (function () {
         function XmlObject() {
-            return _super !== null && _super.apply(this, arguments) || this;
         }
         XmlObject.prototype.GetAttribute = function (node, name, defaultValue) {
             if (defaultValue === void 0) { defaultValue = null; }
@@ -288,7 +291,7 @@ var tl_create;
             return -1;
         };
         return XmlObject;
-    }(xadesjs.XmlObject));
+    }());
     var XmlTrustServiceStatusList = {
         ElementNames: {
             TrustServiceStatusList: "TrustServiceStatusList",
@@ -363,11 +366,11 @@ var tl_create;
                 throw new Error("Wrong XML element");
         };
         TrustServiceStatusList.prototype.CheckSignature = function () {
-            var xmlSignature = this.m_element.getElementsByTagNameNS(xadesjs.XmlSignature.NamespaceURI, "Signature");
-            // TODO: change this.m_element.ownerDocument -> this.m_element after xadesjs fix;
-            var sxml = new xadesjs.SignedXml(this.m_element.ownerDocument);
+            var xmlSignature = this.m_element.getElementsByTagNameNS(XmlDSigJs.XmlSignature.NamespaceURI, "Signature");
+            // TODO: change this.m_element.ownerDocument -> this.m_element after XAdES fix;
+            var sxml = new XAdES.SignedXml(this.m_element.ownerDocument);
             sxml.LoadXml(xmlSignature[0]);
-            return sxml.CheckSignature();
+            return sxml.Verify();
         };
         return TrustServiceStatusList;
     }(XmlObject));
@@ -1080,3 +1083,4 @@ var tl_create;
 })(tl_create || (tl_create = {}));
 if (typeof module !== "undefined")
     module.exports = tl_create;
+//# sourceMappingURL=tl-create.js.map

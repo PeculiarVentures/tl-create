@@ -15,7 +15,7 @@
     "commander": "^2.9.0",
     "node-webcrypto-ossl": "^1.0.7",
     "sync-request": "^3.0.1",
-    "xadesjs": "^1.0.2",
+    "xadesjs": "^2.0.4",
     "xmldom-alpha": "^0.1.23",
     "temp": "^0.8.3",
     "asn1js": "^2.0.12",
