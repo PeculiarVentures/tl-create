@@ -9,7 +9,7 @@ global.DOMParser = require('xmldom-alpha').DOMParser;
 global.XMLSerializer = require('xmldom-alpha').XMLSerializer;
 global.XmlCore = require('xml-core');
 var WebCrypto = require("node-webcrypto-ossl");
-xadesjs.Application.setEngine("OpenSSL", new WebCrypto());
+XAdES.Application.setEngine("OpenSSL", new WebCrypto());
 var tl_create = require('../../built/tl-create.js');
 var fs = require('fs');
 var temp = require('temp').track();
