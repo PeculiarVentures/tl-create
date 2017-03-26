@@ -2,12 +2,13 @@
     "compilerOptions": {
         "module": "amd",
         "target": "es5",
+        "moduleResolution": "node",
         "noImplicitAny": true,
         "sourceMap": false,
-        "outFile": "built/tl-create.js"
+        "outFile": "built/tl-create.js",
+        "moduleResolution": "node"
     },
     "files": [
-        "typings/index.d.ts",
         "src/utils.ts",
         "src/formats/mozilla.ts",
         "src/formats/eutl.ts",

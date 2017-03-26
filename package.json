@@ -12,15 +12,20 @@
   "author": "Asif ur rahman",
   "license": "MIT",
   "dependencies": {
+    "@types/asn1js": "0.0.1",
+    "@types/cheerio": "^0.22.0",
+    "@types/node": "^7.0.10",
+    "asn1js": "^2.0.12",
+    "cheerio": "^0.22.0",
     "commander": "^2.9.0",
     "node-webcrypto-ossl": "^1.0.7",
+    "pvutils": "latest",
     "sync-request": "^3.0.1",
-    "xadesjs": "^1.0.2",
-    "xmldom-alpha": "^0.1.23",
     "temp": "^0.8.3",
-    "node.extend": "^1.1.6",
-    "asn1js": "^1.2.12",
-    "cheerio": "^0.22.0"
+    "xadesjs": "^2.0.4",
+    "xml-core": "^1.0.10",
+    "xmldom-alpha": "^0.1.23",
+    "xmldsigjs": "^2.0.7"
   },
   "devDependencies": {},
   "repository": {
