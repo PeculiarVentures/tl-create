@@ -23,6 +23,7 @@
     "sync-request": "^3.0.1",
     "temp": "^0.8.3",
     "xadesjs": "^2.0.4",
+    "xml-core": "^1.0.10",
     "xmldom-alpha": "^0.1.23"
   },
   "devDependencies": {},
