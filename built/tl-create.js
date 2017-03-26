@@ -228,6 +228,9 @@ var tl_create;
 })(tl_create || (tl_create = {}));
 /// <reference types="xadesjs" />
 /// <reference types="xml-core" />
+var XmlCore = require("xml-core");
+var XmlDSigJs = require("xmldsigjs");
+var XAdES = require("xadesjs");
 var tl_create;
 (function (tl_create) {
     var euURL = "https://ec.europa.eu/information_society/policy/esignature/trusted-list/tl-mp.xml";
@@ -1083,3 +1086,4 @@ var tl_create;
 })(tl_create || (tl_create = {}));
 if (typeof module !== "undefined")
     module.exports = tl_create;
+//# sourceMappingURL=tl-create.js.map

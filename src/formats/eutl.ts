@@ -1,6 +1,10 @@
 /// <reference types="xadesjs" />
 /// <reference types="xml-core" />
 
+let XmlCore = require("xml-core");
+let XmlDSigJs = require("xmldsigjs");
+let XAdES = require("xadesjs");
+
 namespace tl_create {
     const euURL = "https://ec.europa.eu/information_society/policy/esignature/trusted-list/tl-mp.xml";
 
