@@ -1033,6 +1033,83 @@ var tl_create;
     }());
     tl_create.Apple = Apple;
 })(tl_create || (tl_create = {}));
+/// <reference path="sync-request.d.ts" />
+var Pkijs = require("pkijs");
+var Pvutils = require("pvutils");
+var tl_create;
+(function (tl_create) {
+    var ciscoURL = "https://www.cisco.com/security/pki/trs/";
+    var Cisco = (function () {
+        function Cisco(store) {
+            if (store === void 0) { store = "external"; }
+            switch (store) {
+                case "external":
+                    this.fetchurl = ciscoURL + "ios.p7b";
+                    this.source = "Cisco Trusted External Root Bundle";
+                    break;
+                case "union":
+                    this.fetchurl = ciscoURL + "ios_union.p7b";
+                    this.source = "Cisco Trusted Union Root Bundle";
+                    break;
+                case "core":
+                    this.fetchurl = ciscoURL + "ios_core.p7b";
+                    this.source = "Cisco Trusted Core Root Bundle";
+                    break;
+                default:
+                    throw new Error("Unknown CISCO store type '" + store + "'");
+            }
+        }
+        Cisco.prototype.getTrusted = function (data, skipfetch) {
+            if (skipfetch === void 0) { skipfetch = false; }
+            var tl = new tl_create.TrustedList();
+            var databuf;
+            if (!data) {
+                var res = request('GET', this.fetchurl, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
+                databuf = res.body.buffer;
+            }
+            else {
+                databuf = new Buffer(data, "binary");
+            }
+            var asn1obj = Asn1js.fromBER(databuf);
+            var contentInfo = new Pkijs.ContentInfo({ schema: asn1obj.result });
+            if (contentInfo.contentType !== "1.2.840.113549.1.7.2")
+                throw new Error("Unknown content type '" + contentInfo.contentType + "' for contentInfo");
+            var signedData = new Pkijs.SignedData({ schema: contentInfo.content });
+            var asn1obj2 = Asn1js.fromBER(signedData.encapContentInfo.eContent.valueBlock.valueHex);
+            var contentInfo2 = new Pkijs.ContentInfo({ schema: asn1obj2.result });
+            if (contentInfo.contentType !== "1.2.840.113549.1.7.2")
+                throw new Error("Unknown content type '" + contentInfo.contentType + "' for contentInfo");
+            var signedData2 = new Pkijs.SignedData({ schema: contentInfo2.content });
+            for (var _i = 0, _a = signedData2.certificates; _i < _a.length; _i++) {
+                var cert = _a[_i];
+                var operator = "Unknown";
+                for (var _b = 0, _c = cert.subject.typesAndValues; _b < _c.length; _b++) {
+                    var rdn = _c[_b];
+                    console.log(rdn.type);
+                    console.log(rdn.value.valueBlock.value);
+                    if (rdn.type === "2.5.4.10") {
+                        operator = rdn.value.valueBlock.value;
+                        break;
+                    }
+                }
+                tl.AddCertificate({
+                    raw: Pvutils.toBase64(Pvutils.arrayBufferToString(cert.toSchema(true).toBER())),
+                    trust: ["ANY"],
+                    operator: operator,
+                    source: this.source,
+                    evpolicy: []
+                });
+            }
+            return tl;
+        };
+        Cisco.prototype.getDisallowed = function (data, skipfetch) {
+            if (skipfetch === void 0) { skipfetch = false; }
+            return new tl_create.TrustedList();
+        };
+        return Cisco;
+    }());
+    tl_create.Cisco = Cisco;
+})(tl_create || (tl_create = {}));
 var tl_create;
 (function (tl_create) {
     var TrustedList = (function () {
@@ -1086,4 +1163,3 @@ var tl_create;
 })(tl_create || (tl_create = {}));
 if (typeof module !== "undefined")
     module.exports = tl_create;
-//# sourceMappingURL=tl-create.js.map
