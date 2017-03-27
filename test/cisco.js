@@ -15,7 +15,7 @@ var fs = require("fs");
 describe("Cisco format", function () {
 
     it("Parse incoming text for external root bundle", function () {
-        this.timeout(5000);
+        this.timeout(15000);
 
         // get static file
         var ciscoText = fs.readFileSync("./test/static/ios.p7b", "binary");
@@ -27,7 +27,7 @@ describe("Cisco format", function () {
     });
 
     it("Parse incoming text for union root bundle", function () {
-        this.timeout(5000);
+        this.timeout(15000);
 
         // get static file
         var ciscoText = fs.readFileSync("./test/static/ios_union.p7b", "binary");
@@ -39,6 +39,8 @@ describe("Cisco format", function () {
     });
 
     it("Parse incoming text for core root bundle", function () {
+        this.timeout(15000);
+
         // get static file
         var ciscoText = fs.readFileSync("./test/static/ios_core.p7b", "binary");
 
