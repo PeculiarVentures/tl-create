@@ -1059,8 +1059,7 @@ var tl_create;
                     throw new Error("Unknown CISCO store type '" + store + "'");
             }
         }
-        Cisco.prototype.getTrusted = function (data, skipfetch) {
-            if (skipfetch === void 0) { skipfetch = false; }
+        Cisco.prototype.getTrusted = function (data) {
             var tl = new tl_create.TrustedList();
             var databuf;
             if (!data) {
@@ -1068,7 +1067,7 @@ var tl_create;
                 databuf = res.body.buffer;
             }
             else {
-                databuf = new Buffer(data, "binary");
+                databuf = Pvutils.stringToArrayBuffer(data);
             }
             var asn1obj = Asn1js.fromBER(databuf);
             var contentInfo = new Pkijs.ContentInfo({ schema: asn1obj.result });
@@ -1085,8 +1084,6 @@ var tl_create;
                 var operator = "Unknown";
                 for (var _b = 0, _c = cert.subject.typesAndValues; _b < _c.length; _b++) {
                     var rdn = _c[_b];
-                    console.log(rdn.type);
-                    console.log(rdn.value.valueBlock.value);
                     if (rdn.type === "2.5.4.10") {
                         operator = rdn.value.valueBlock.value;
                         break;
@@ -1102,8 +1099,7 @@ var tl_create;
             }
             return tl;
         };
-        Cisco.prototype.getDisallowed = function (data, skipfetch) {
-            if (skipfetch === void 0) { skipfetch = false; }
+        Cisco.prototype.getDisallowed = function (data) {
             return new tl_create.TrustedList();
         };
         return Cisco;
@@ -1163,3 +1159,4 @@ var tl_create;
 })(tl_create || (tl_create = {}));
 if (typeof module !== "undefined")
     module.exports = tl_create;
+//# sourceMappingURL=tl-create.js.map

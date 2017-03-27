@@ -29,7 +29,7 @@ namespace tl_create {
             }
         }
 
-        getTrusted(data?: string, skipfetch = false): TrustedList {
+        getTrusted(data?: string): TrustedList {
             let tl = new TrustedList();
             let databuf: Buffer;
 
@@ -37,7 +37,7 @@ namespace tl_create {
                 let res = request('GET', this.fetchurl, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
                 databuf = res.body.buffer;
             } else {
-                databuf = new Buffer(data, "binary");
+                databuf = Pvutils.stringToArrayBuffer(data);
             }
 
             let asn1obj = Asn1js.fromBER(databuf);
@@ -75,7 +75,7 @@ namespace tl_create {
             return tl;
         }
 
-        getDisallowed(data?: string, skipfetch = false): TrustedList {
+        getDisallowed(data?: string): TrustedList {
             return new TrustedList();
         }
     }
