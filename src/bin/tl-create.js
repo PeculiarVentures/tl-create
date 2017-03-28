@@ -57,6 +57,8 @@ program
     .option('-m, --mozilla', 'Mozilla Trust List Parse')
     .option('-s, --microsoft', 'Microsoft Trust List Parse')
     .option('-a, --apple', 'Apple Trust List Parse')
+    .option('-c, --cisco', 'Cisco Trust List Parse')
+    .option('-C, --ciscotype [type]', 'Select Cisco Trusted Root Store (external/union/core)', 'external')
     .option('-f, --for [type]', 'Add the specified type for parse', 'ALL')
     .option('-o, --format [format]', 'Add the specified type for output format', 'pem')
     .option('-d, --disallowed', 'Fetch disallowed roots instead of trusted');
@@ -72,6 +74,7 @@ program.on('--help', function () {
     console.log('    $ tl-create --microsoft --format pem roots.pem');
     console.log('    $ tl-create --microsoft --disallowed --format pem disallowedroots.pem');
     console.log('    $ tl-create --apple --format pem roots.pem');
+    console.log('    $ tl-create --cisco --ciscotype core --format pem roots.pem');
     console.log('');
 });
 
@@ -166,6 +169,17 @@ function parseAppleDisallowed() {
     return tl;
 }
 
+function parseCiscoTrusted(ciscotype) {
+    console.log("Trust Lists: Cisco - " + ciscotype);
+    var cisco = new tl_create.Cisco(ciscotype);
+    var tl = cisco.getTrusted();
+    return tl;
+}
+
+function parseCiscoDisallowed() {
+    throw "Cisco does not support disallowed certificates.";
+}
+
 function jsonToPKIJS(json) {
     var _pkijs = [];
     for (var i in json) {
@@ -199,7 +213,7 @@ else if (program.args[0]) {
     console.log('Parsing started: ' + getDateTime());
     var outputfile = program.args[0];
 
-    var eutlTL, mozTL, msTL, appleTL;
+    var eutlTL, mozTL, msTL, appleTL, ciscoTL;
 
     if (program.eutl) {
         try {
@@ -245,6 +259,16 @@ else if (program.args[0]) {
             console.log(e.toString());
         }
     }
+    if (program.cisco) {
+        try {
+            if(!program.disallowed)
+                ciscoTL = parseCiscoTrusted(program.ciscotype);
+            else
+                ciscoTL = parseCiscoDisallowed();
+        } catch (e) {
+            console.log(e.toString());
+        }
+    }
 
     var tl = null;
     if (mozTL)
@@ -255,6 +279,8 @@ else if (program.args[0]) {
         tl = msTL.concat(tl);
     if (appleTL)
         tl = appleTL.concat(tl);
+    if (ciscoTL)
+        tl = ciscoTL.concat(tl);
 
     if (tl === null) {
         console.log("Cannot fetch any Trust Lists.");
