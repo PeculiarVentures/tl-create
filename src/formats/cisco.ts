@@ -8,7 +8,8 @@ namespace tl_create {
 
     export class Cisco {
         fetchurl: string;
-        source:string;
+        source: string;
+        signedData: any;
 
         constructor(store: string = "external") {
             switch(store) {
@@ -46,8 +47,8 @@ namespace tl_create {
             if(contentInfo.contentType !== "1.2.840.113549.1.7.2")
                 throw new Error(`Unknown content type '${contentInfo.contentType}' for contentInfo`);
 
-            let signedData = new Pkijs.SignedData({schema: contentInfo.content});
-            let asn1obj2 = Asn1js.fromBER(signedData.encapContentInfo.eContent.valueBlock.valueHex);
+            this.signedData = new Pkijs.SignedData({schema: contentInfo.content});
+            let asn1obj2 = Asn1js.fromBER(this.signedData.encapContentInfo.eContent.valueBlock.valueHex);
             let contentInfo2 = new Pkijs.ContentInfo({schema: asn1obj2.result});
 
             if(contentInfo.contentType !== "1.2.840.113549.1.7.2")
@@ -77,6 +78,10 @@ namespace tl_create {
 
         getDisallowed(data?: string): TrustedList {
             return new TrustedList();
+        }
+
+        verifyP7(): PromiseLike<any> {
+            return this.signedData.verify({signer: 0});
         }
     }
 }

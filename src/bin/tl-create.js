@@ -8,8 +8,11 @@ global.cheerio = require("cheerio");
 global.DOMParser = require('xmldom-alpha').DOMParser;
 global.XMLSerializer = require('xmldom-alpha').XMLSerializer;
 global.XmlCore = require('xml-core');
+global.Pkijs = require('pkijs');
 var WebCrypto = require("node-webcrypto-ossl");
-XAdES.Application.setEngine("OpenSSL", new WebCrypto());
+webcrypto = new WebCrypto();
+XAdES.Application.setEngine("OpenSSL", webcrypto);
+Pkijs.setEngine("OpenSSL", webcrypto, webcrypto.subtle);
 var tl_create = require('../../built/tl-create.js');
 var fs = require('fs');
 var temp = require('temp').track();
@@ -173,6 +176,16 @@ function parseCiscoTrusted(ciscotype) {
     console.log("Trust Lists: Cisco - " + ciscotype);
     var cisco = new tl_create.Cisco(ciscotype);
     var tl = cisco.getTrusted();
+    cisco.verifyP7()
+        .then(function (verify) {
+            if (!verify)
+                console.log("Warning!!!: Cisco PKCS#7 signature verification failed");
+            else
+                console.log("Information: Cisco PKCS#7 signature verification successful");
+        })
+        .catch(function (e) {
+            console.log("Error:", e);
+        });
     return tl;
 }
 

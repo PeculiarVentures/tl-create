@@ -7,6 +7,11 @@ var asn1js = require("asn1js");
 global.asn1js = asn1js;
 var request = require("sync-request");
 global.request = request;
+var Pkijs = require("pkijs");
+global.Pkijs = Pkijs;
+var WebCrypto = require("node-webcrypto-ossl");
+webcrypto = new WebCrypto();
+Pkijs.setEngine("OpenSSL", webcrypto, webcrypto.subtle);
 var tl_create = require("../built/tl-create");
 var assert = require("assert");
 
@@ -48,6 +53,20 @@ describe("Cisco format", function () {
         var tl = cisco.getTrusted(ciscoText);
 
         assert.equal(tl.Certificates.length, 17);
+    });
+
+    it("Check PKCS#7 signature", function (done) {
+        this.timeout(15000);
+
+        // get static file
+        var ciscoText = fs.readFileSync("./test/static/ios_core.p7b", "binary");
+
+        var cisco = new tl_create.Cisco("core");
+        var tl = cisco.getTrusted(ciscoText);
+        cisco.verifyP7().then(function (v) {
+            assert.equal(v, true, "Wrong signature");
+            done();
+        }).catch(done);
     });
 
 })
