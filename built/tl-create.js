@@ -1073,8 +1073,8 @@ var tl_create;
             var contentInfo = new Pkijs.ContentInfo({ schema: asn1obj.result });
             if (contentInfo.contentType !== "1.2.840.113549.1.7.2")
                 throw new Error("Unknown content type '" + contentInfo.contentType + "' for contentInfo");
-            var signedData = new Pkijs.SignedData({ schema: contentInfo.content });
-            var asn1obj2 = Asn1js.fromBER(signedData.encapContentInfo.eContent.valueBlock.valueHex);
+            this.signedData = new Pkijs.SignedData({ schema: contentInfo.content });
+            var asn1obj2 = Asn1js.fromBER(this.signedData.encapContentInfo.eContent.valueBlock.valueHex);
             var contentInfo2 = new Pkijs.ContentInfo({ schema: asn1obj2.result });
             if (contentInfo.contentType !== "1.2.840.113549.1.7.2")
                 throw new Error("Unknown content type '" + contentInfo.contentType + "' for contentInfo");
@@ -1101,6 +1101,9 @@ var tl_create;
         };
         Cisco.prototype.getDisallowed = function (data) {
             return new tl_create.TrustedList();
+        };
+        Cisco.prototype.verifyP7 = function () {
+            return this.signedData.verify({ signer: 0 });
         };
         return Cisco;
     }());
@@ -1159,4 +1162,3 @@ var tl_create;
 })(tl_create || (tl_create = {}));
 if (typeof module !== "undefined")
     module.exports = tl_create;
-//# sourceMappingURL=tl-create.js.map
