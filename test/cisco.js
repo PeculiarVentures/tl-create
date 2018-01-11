@@ -11,7 +11,11 @@ var Pkijs = require("pkijs");
 global.Pkijs = Pkijs;
 var WebCrypto = require("node-webcrypto-ossl");
 webcrypto = new WebCrypto();
-Pkijs.setEngine("OpenSSL", webcrypto, webcrypto.subtle);
+Pkijs.setEngine('OpenSSL', webcrypto, new Pkijs.CryptoEngine({
+    name: 'OpenSSL',
+    crypto: webcrypto,
+    subtle: webcrypto.subtle
+}));
 var tl_create = require("../built/tl-create");
 var assert = require("assert");
 

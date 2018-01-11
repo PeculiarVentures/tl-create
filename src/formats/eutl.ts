@@ -10,28 +10,63 @@ namespace tl_create {
 
     export class EUTL {
 
-        TrustServiceStatusList: TrustServiceStatusList = null;
+        TrustServiceStatusLists: TrustServiceStatusList[] = null;
+
+        loadTSL(data: string): TrustServiceStatusList {
+            let eutl = new tl_create.TrustServiceStatusList();
+            let xml = XAdES.Parse(data, "application/xml");
+
+            eutl.LoadXml(xml);
+
+            return eutl;
+        }
+
+        fetchAllTSLs(): void {
+            let toProcess: string[] = [ euURL ];
+            let processed: string[] = [];
+
+            this.TrustServiceStatusLists = [];
+
+            while (toProcess.length !== 0) {
+                let url = toProcess.pop();
+                processed.push(url);
+                let res = request('GET', url, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
+                let eutl = this.loadTSL(res.getBody('utf8'));
+
+                this.TrustServiceStatusLists.push(eutl);
+
+                for (let pointer of eutl.SchemaInformation.Pointers) {
+                    if ((pointer.AdditionalInformation.MimeType === 'application/vnd.etsi.tsl+xml') &&
+                        (processed.indexOf(pointer.Location) === -1))
+                        toProcess.push(pointer.Location);
+                }
+            }
+        }
 
         getTrusted(data?: string): TrustedList {
-            let eutl = new tl_create.TrustServiceStatusList();
-
-            if(!data) {
-                let res = request('GET', euURL, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
-                data = res.body.toString();
+            if(data) {
+                this.TrustServiceStatusLists = [ this.loadTSL(data) ];
+            } else {
+                this.fetchAllTSLs();
             }
-            let xml = new DOMParser().parseFromString(data, "application/xml");
-            eutl.LoadXml(xml);
-            this.TrustServiceStatusList = eutl;
+
             let tl = new TrustedList();
-            for (let pointer of eutl.SchemaInformation.Pointers)
-                for (let cert of pointer.X509Certificates)
-                    tl.AddCertificate({
-                        raw: cert,
-                        trust: pointer.AdditionalInformation.SchemeTypeCommunityRules,
-                        operator: pointer.AdditionalInformation.SchemeOperatorName.GetItem("en"),
-                        source: "EUTL",
-                        evpolicy: []
-                    });
+            for (let TrustServiceStatusList of this.TrustServiceStatusLists) {
+                for (let trustServiceProvider of TrustServiceStatusList.TrustServiceProviders) {
+                    for (let tSPService of trustServiceProvider.TSPServices) {
+                        for (let cert of tSPService.X509Certificates) {
+                            tl.AddCertificate({
+                                raw: cert,
+                                trust: [ tSPService.ServiceTypeIdentifier ],
+                                operator: trustServiceProvider.TSPName.GetItem("en"),
+                                source: "EUTL",
+                                evpolicy: []
+                            });
+                        }
+                    }
+                }
+            }
+
             return tl;
         }
     }
@@ -104,6 +139,12 @@ namespace tl_create {
             NextUpdate: "NextUpdate",
             dateTime: "dateTime",
             DistributionPoints: "DistributionPoints",
+            MimeType: "MimeType",
+            TrustServiceProviderList: "TrustServiceProviderList",
+            TrustServiceProvider: "TrustServiceProvider",
+            TSPName: "TSPName",
+            TSPService: "TSPService",
+            ServiceTypeIdentifier: "ServiceTypeIdentifier",
         },
 
         AttributeNames: {
@@ -121,6 +162,7 @@ namespace tl_create {
         Id: string = null;
         TSLTag: string = null;
         SchemaInformation: SchemeInformation = null;
+        TrustServiceProviders: TrustServiceProvider[] = [];
 
         LoadXml(value: Node): void {
             if (value == null)
@@ -141,13 +183,25 @@ namespace tl_create {
                 let i = this.NextElementPos(value.childNodes, 0, XmlTrustServiceStatusList.ElementNames.SchemeInformation, XmlTrustServiceStatusList.NamespaceURI, true);
                 this.SchemaInformation.LoadXml(value.childNodes[i] as Element);
 
+                i = this.NextElementPos(value.childNodes, ++i, XmlTrustServiceStatusList.ElementNames.TrustServiceProviderList, XmlTrustServiceStatusList.NamespaceURI, false);
+                if (i > 0) {
+                    let el = value.childNodes[i] as Element;
+                    let TrustServiceProviderNodes = el.getElementsByTagNameNS(XmlTrustServiceStatusList.NamespaceURI, XmlTrustServiceStatusList.ElementNames.TrustServiceProvider);
+                    for(let i = 0; i < TrustServiceProviderNodes.length; i++) {
+                        let TrustServiceProviderNode = TrustServiceProviderNodes[i];
+                        let trustServiceProvider = new TrustServiceProvider();
+                        trustServiceProvider.LoadXml(TrustServiceProviderNode);
+                        this.TrustServiceProviders.push(trustServiceProvider);
+                    }
+                }
+
                 this.m_element = value as Element;
             }
             else
                 throw new Error("Wrong XML element");
         }
 
-        CheckSignature(): PromiseLike<boolean> {
+        CheckSignature(): Promise<boolean> {
 
             let xmlSignature = this.m_element.getElementsByTagNameNS(XmlDSigJs.XmlSignature.NamespaceURI, "Signature");
 
@@ -280,6 +334,7 @@ namespace tl_create {
         SchemeTerritory: string = null;
         SchemeOperatorName = new SchemeOperatorName();
         SchemeTypeCommunityRules: string[] = [];
+        MimeType: string = null;
 
         LoadXml(value: Element): void {
             if (value == null)
@@ -307,6 +362,9 @@ namespace tl_create {
                                 for (let j = 0; j < elements.length; j++) {
                                     this.SchemeTypeCommunityRules.push(elements[j].textContent);
                                 }
+                                break;
+                            case XmlTrustServiceStatusList.ElementNames.MimeType:
+                                this.MimeType = node.textContent;
                                 break;
                         }
                     }
@@ -378,4 +436,79 @@ namespace tl_create {
         }
     }
 
+    class TrustServiceProvider extends XmlObject {
+        TSPName: TSPName = null;
+        TSPServices: TSPService[] = [];
+
+        LoadXml(value: Element): void {
+            if (value == null)
+                throw new Error("Parameter 'value' is required");
+
+            if ((value.localName === XmlTrustServiceStatusList.ElementNames.TrustServiceProvider) && (value.namespaceURI === XmlTrustServiceStatusList.NamespaceURI)) {
+                let TSPNameNodes = value.getElementsByTagNameNS(XmlTrustServiceStatusList.NamespaceURI, XmlTrustServiceStatusList.ElementNames.TSPName);
+                if (TSPNameNodes.length > 0) {
+                    this.TSPName = new TSPName()
+                    this.TSPName.LoadXml(TSPNameNodes[0] as Element);
+                }
+
+                let TSPServiceNodes = value.getElementsByTagNameNS(XmlTrustServiceStatusList.NamespaceURI, XmlTrustServiceStatusList.ElementNames.TSPService);
+                for (let i = 0; i < TSPServiceNodes.length; i++) {
+                    let TSPServiceNode = TSPServiceNodes[i];
+                    let tSPService = new TSPService();
+                    tSPService.LoadXml(TSPServiceNode);
+                    this.TSPServices.push(tSPService);
+                }
+            }
+            else
+                throw new Error("Wrong XML element");
+        }
+    }
+
+    class TSPService extends XmlObject {
+        X509Certificates: string[] = [];
+        ServiceTypeIdentifier: string = null;
+
+        LoadXml(value: Element): void {
+            if (value == null)
+                throw new Error("Parameter 'value' is required");
+
+            if ((value.localName === XmlTrustServiceStatusList.ElementNames.TSPService) && (value.namespaceURI === XmlTrustServiceStatusList.NamespaceURI)) {
+                let ServiceTypeIdentifierNodes = value.getElementsByTagNameNS(XmlTrustServiceStatusList.NamespaceURI, XmlTrustServiceStatusList.ElementNames.ServiceTypeIdentifier);
+                if (ServiceTypeIdentifierNodes.length > 0)
+                    this.ServiceTypeIdentifier = ServiceTypeIdentifierNodes[0].textContent;
+
+                let DigitalIdNodes = value.getElementsByTagNameNS(XmlTrustServiceStatusList.NamespaceURI, XmlTrustServiceStatusList.ElementNames.DigitalId);
+                for (let i = 0; i < DigitalIdNodes.length; i++) {
+                    let DigitalId = DigitalIdNodes[i] as Element;
+                    let X509CertificateNodes = DigitalId.getElementsByTagNameNS(XmlTrustServiceStatusList.NamespaceURI, XmlTrustServiceStatusList.ElementNames.X509Certificate);
+                    for (let j = 0; j < X509CertificateNodes.length; j++) {
+                        this.X509Certificates.push(X509CertificateNodes[j].textContent);
+                    }
+                }
+            }
+            else
+                throw new Error("Wrong XML element");
+        }
+    }
+
+    class TSPName extends MultiLangType<string> {
+        LoadXml(value: Element): void {
+            if (value == null)
+                throw new Error("Parameter 'value' is required");
+
+            if ((value.localName === XmlTrustServiceStatusList.ElementNames.TSPName) && (value.namespaceURI === XmlTrustServiceStatusList.NamespaceURI)) {
+                // Search for OtherInformation
+                let elements = value.getElementsByTagNameNS(XmlTrustServiceStatusList.NamespaceURI, XmlTrustServiceStatusList.ElementNames.Name);
+                for (let i = 0; i < elements.length; i++) {
+                    let element = elements[i];
+                    let lang = this.GetLang(element);
+                    if (!lang)
+                        throw new Error("TSPName:Name has no xml:lang attribute");
+                    this.AddItem(element.textContent, lang);
+                }
+            }
+            else
+                throw new Error("Wrong XML element");
+        }
+    }
 }

@@ -12,7 +12,11 @@ global.Pkijs = require('pkijs');
 var WebCrypto = require("node-webcrypto-ossl");
 webcrypto = new WebCrypto();
 XAdES.Application.setEngine("OpenSSL", webcrypto);
-Pkijs.setEngine("OpenSSL", webcrypto, webcrypto.subtle);
+Pkijs.setEngine("OpenSSL", webcrypto, new Pkijs.CryptoEngine({
+    name: "OpenSSL",
+    crypto: webcrypto,
+    subtle: webcrypto.subtle
+}));
 var tl_create = require('../../built/tl-create.js');
 var fs = require('fs');
 var temp = require('temp').track();
@@ -113,7 +117,7 @@ function parseEUTLTrusted() {
     console.log("Trust Lists: EUTL");
     var eutl = new tl_create.EUTL();
     var tl = eutl.getTrusted();
-    eutl.TrustServiceStatusList.CheckSignature()
+    Promise.all(eutl.TrustServiceStatusLists.map(function (list) { return list.CheckSignature() }))
         .then(function (verify) {
             if (!verify)
                 console.log("Warning!!!: EUTL signature is not valid");
