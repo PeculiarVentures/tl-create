@@ -57,7 +57,7 @@ var tl_create;
         CK_TRUST: "CK_TRUST"
     };
     var mozillaURL = "http://mxr.mozilla.org/mozilla/source/security/nss/lib/ckfw/builtins/certdata.txt?raw=1";
-    var Mozilla = (function () {
+    var Mozilla = /** @class */ (function () {
         function Mozilla(codeFilter) {
             if (codeFilter === void 0) { codeFilter = ["CKA_TRUST_ALL"]; }
             this.attributes = [];
@@ -234,31 +234,59 @@ var XAdES = require("xadesjs");
 var tl_create;
 (function (tl_create) {
     var euURL = "https://ec.europa.eu/information_society/policy/esignature/trusted-list/tl-mp.xml";
-    var EUTL = (function () {
+    var EUTL = /** @class */ (function () {
         function EUTL() {
-            this.TrustServiceStatusList = null;
+            this.TrustServiceStatusLists = null;
         }
-        EUTL.prototype.getTrusted = function (data) {
+        EUTL.prototype.loadTSL = function (data) {
             var eutl = new tl_create.TrustServiceStatusList();
-            if (!data) {
-                var res = request('GET', euURL, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
-                data = res.body.toString();
-            }
-            var xml = new DOMParser().parseFromString(data, "application/xml");
+            var xml = XAdES.Parse(data, "application/xml");
             eutl.LoadXml(xml);
-            this.TrustServiceStatusList = eutl;
+            return eutl;
+        };
+        EUTL.prototype.fetchAllTSLs = function () {
+            var toProcess = [euURL];
+            var processed = [];
+            this.TrustServiceStatusLists = [];
+            while (toProcess.length !== 0) {
+                var url = toProcess.pop();
+                processed.push(url);
+                var res = request('GET', url, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
+                var eutl = this.loadTSL(res.getBody('utf8'));
+                this.TrustServiceStatusLists.push(eutl);
+                for (var _i = 0, _a = eutl.SchemaInformation.Pointers; _i < _a.length; _i++) {
+                    var pointer = _a[_i];
+                    if ((pointer.AdditionalInformation.MimeType === 'application/vnd.etsi.tsl+xml') &&
+                        (processed.indexOf(pointer.Location) === -1))
+                        toProcess.push(pointer.Location);
+                }
+            }
+        };
+        EUTL.prototype.getTrusted = function (data) {
+            if (data) {
+                this.TrustServiceStatusLists = [this.loadTSL(data)];
+            }
+            else {
+                this.fetchAllTSLs();
+            }
             var tl = new tl_create.TrustedList();
-            for (var _i = 0, _a = eutl.SchemaInformation.Pointers; _i < _a.length; _i++) {
-                var pointer = _a[_i];
-                for (var _b = 0, _c = pointer.X509Certificates; _b < _c.length; _b++) {
-                    var cert = _c[_b];
-                    tl.AddCertificate({
-                        raw: cert,
-                        trust: pointer.AdditionalInformation.SchemeTypeCommunityRules,
-                        operator: pointer.AdditionalInformation.SchemeOperatorName.GetItem("en"),
-                        source: "EUTL",
-                        evpolicy: []
-                    });
+            for (var _i = 0, _a = this.TrustServiceStatusLists; _i < _a.length; _i++) {
+                var TrustServiceStatusList_1 = _a[_i];
+                for (var _b = 0, _c = TrustServiceStatusList_1.TrustServiceProviders; _b < _c.length; _b++) {
+                    var trustServiceProvider = _c[_b];
+                    for (var _d = 0, _e = trustServiceProvider.TSPServices; _d < _e.length; _d++) {
+                        var tSPService = _e[_d];
+                        for (var _f = 0, _g = tSPService.X509Certificates; _f < _g.length; _f++) {
+                            var cert = _g[_f];
+                            tl.AddCertificate({
+                                raw: cert,
+                                trust: [tSPService.ServiceTypeIdentifier],
+                                operator: trustServiceProvider.TSPName.GetItem("en"),
+                                source: "EUTL",
+                                evpolicy: []
+                            });
+                        }
+                    }
                 }
             }
             return tl;
@@ -267,7 +295,7 @@ var tl_create;
     }());
     tl_create.EUTL = EUTL;
     tl_create.XmlNodeType = XmlCore.XmlNodeType;
-    var XmlObject = (function () {
+    var XmlObject = /** @class */ (function () {
         function XmlObject() {
         }
         XmlObject.prototype.GetAttribute = function (node, name, defaultValue) {
@@ -334,6 +362,12 @@ var tl_create;
             NextUpdate: "NextUpdate",
             dateTime: "dateTime",
             DistributionPoints: "DistributionPoints",
+            MimeType: "MimeType",
+            TrustServiceProviderList: "TrustServiceProviderList",
+            TrustServiceProvider: "TrustServiceProvider",
+            TSPName: "TSPName",
+            TSPService: "TSPService",
+            ServiceTypeIdentifier: "ServiceTypeIdentifier",
         },
         AttributeNames: {
             Id: "Id",
@@ -341,13 +375,14 @@ var tl_create;
         },
         NamespaceURI: "http://uri.etsi.org/02231/v2#"
     };
-    var TrustServiceStatusList = (function (_super) {
+    var TrustServiceStatusList = /** @class */ (function (_super) {
         __extends(TrustServiceStatusList, _super);
         function TrustServiceStatusList() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
             _this.Id = null;
             _this.TSLTag = null;
             _this.SchemaInformation = null;
+            _this.TrustServiceProviders = [];
             return _this;
         }
         TrustServiceStatusList.prototype.LoadXml = function (value) {
@@ -363,6 +398,17 @@ var tl_create;
                 this.SchemaInformation = new SchemeInformation();
                 var i = this.NextElementPos(value.childNodes, 0, XmlTrustServiceStatusList.ElementNames.SchemeInformation, XmlTrustServiceStatusList.NamespaceURI, true);
                 this.SchemaInformation.LoadXml(value.childNodes[i]);
+                i = this.NextElementPos(value.childNodes, ++i, XmlTrustServiceStatusList.ElementNames.TrustServiceProviderList, XmlTrustServiceStatusList.NamespaceURI, false);
+                if (i > 0) {
+                    var el = value.childNodes[i];
+                    var TrustServiceProviderNodes = el.getElementsByTagNameNS(XmlTrustServiceStatusList.NamespaceURI, XmlTrustServiceStatusList.ElementNames.TrustServiceProvider);
+                    for (var i_1 = 0; i_1 < TrustServiceProviderNodes.length; i_1++) {
+                        var TrustServiceProviderNode = TrustServiceProviderNodes[i_1];
+                        var trustServiceProvider = new TrustServiceProvider();
+                        trustServiceProvider.LoadXml(TrustServiceProviderNode);
+                        this.TrustServiceProviders.push(trustServiceProvider);
+                    }
+                }
                 this.m_element = value;
             }
             else
@@ -378,7 +424,7 @@ var tl_create;
         return TrustServiceStatusList;
     }(XmlObject));
     tl_create.TrustServiceStatusList = TrustServiceStatusList;
-    var SchemeInformation = (function (_super) {
+    var SchemeInformation = /** @class */ (function (_super) {
         __extends(SchemeInformation, _super);
         function SchemeInformation() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -437,7 +483,7 @@ var tl_create;
         };
         return SchemeInformation;
     }(XmlObject));
-    var Pointer = (function (_super) {
+    var Pointer = /** @class */ (function (_super) {
         __extends(Pointer, _super);
         function Pointer() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -474,7 +520,7 @@ var tl_create;
         };
         return Pointer;
     }(XmlObject));
-    var AdditionalInformation = (function (_super) {
+    var AdditionalInformation = /** @class */ (function (_super) {
         __extends(AdditionalInformation, _super);
         function AdditionalInformation() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -482,6 +528,7 @@ var tl_create;
             _this.SchemeTerritory = null;
             _this.SchemeOperatorName = new SchemeOperatorName();
             _this.SchemeTypeCommunityRules = [];
+            _this.MimeType = null;
             return _this;
         }
         AdditionalInformation.prototype.LoadXml = function (value) {
@@ -510,6 +557,9 @@ var tl_create;
                                     this.SchemeTypeCommunityRules.push(elements[j].textContent);
                                 }
                                 break;
+                            case XmlTrustServiceStatusList.ElementNames.MimeType:
+                                this.MimeType = node.textContent;
+                                break;
                         }
                     }
                 }
@@ -528,7 +578,7 @@ var tl_create;
         };
         return AdditionalInformation;
     }(XmlObject));
-    var MultiLangType = (function (_super) {
+    var MultiLangType = /** @class */ (function (_super) {
         __extends(MultiLangType, _super);
         function MultiLangType() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -552,7 +602,7 @@ var tl_create;
         };
         return MultiLangType;
     }(XmlObject));
-    var SchemeOperatorName = (function (_super) {
+    var SchemeOperatorName = /** @class */ (function (_super) {
         __extends(SchemeOperatorName, _super);
         function SchemeOperatorName() {
             return _super !== null && _super.apply(this, arguments) || this;
@@ -575,6 +625,89 @@ var tl_create;
                 throw new Error("Wrong XML element");
         };
         return SchemeOperatorName;
+    }(MultiLangType));
+    var TrustServiceProvider = /** @class */ (function (_super) {
+        __extends(TrustServiceProvider, _super);
+        function TrustServiceProvider() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.TSPName = null;
+            _this.TSPServices = [];
+            return _this;
+        }
+        TrustServiceProvider.prototype.LoadXml = function (value) {
+            if (value == null)
+                throw new Error("Parameter 'value' is required");
+            if ((value.localName === XmlTrustServiceStatusList.ElementNames.TrustServiceProvider) && (value.namespaceURI === XmlTrustServiceStatusList.NamespaceURI)) {
+                var TSPNameNodes = value.getElementsByTagNameNS(XmlTrustServiceStatusList.NamespaceURI, XmlTrustServiceStatusList.ElementNames.TSPName);
+                if (TSPNameNodes.length > 0) {
+                    this.TSPName = new TSPName();
+                    this.TSPName.LoadXml(TSPNameNodes[0]);
+                }
+                var TSPServiceNodes = value.getElementsByTagNameNS(XmlTrustServiceStatusList.NamespaceURI, XmlTrustServiceStatusList.ElementNames.TSPService);
+                for (var i = 0; i < TSPServiceNodes.length; i++) {
+                    var TSPServiceNode = TSPServiceNodes[i];
+                    var tSPService = new TSPService();
+                    tSPService.LoadXml(TSPServiceNode);
+                    this.TSPServices.push(tSPService);
+                }
+            }
+            else
+                throw new Error("Wrong XML element");
+        };
+        return TrustServiceProvider;
+    }(XmlObject));
+    var TSPService = /** @class */ (function (_super) {
+        __extends(TSPService, _super);
+        function TSPService() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.X509Certificates = [];
+            _this.ServiceTypeIdentifier = null;
+            return _this;
+        }
+        TSPService.prototype.LoadXml = function (value) {
+            if (value == null)
+                throw new Error("Parameter 'value' is required");
+            if ((value.localName === XmlTrustServiceStatusList.ElementNames.TSPService) && (value.namespaceURI === XmlTrustServiceStatusList.NamespaceURI)) {
+                var ServiceTypeIdentifierNodes = value.getElementsByTagNameNS(XmlTrustServiceStatusList.NamespaceURI, XmlTrustServiceStatusList.ElementNames.ServiceTypeIdentifier);
+                if (ServiceTypeIdentifierNodes.length > 0)
+                    this.ServiceTypeIdentifier = ServiceTypeIdentifierNodes[0].textContent;
+                var DigitalIdNodes = value.getElementsByTagNameNS(XmlTrustServiceStatusList.NamespaceURI, XmlTrustServiceStatusList.ElementNames.DigitalId);
+                for (var i = 0; i < DigitalIdNodes.length; i++) {
+                    var DigitalId = DigitalIdNodes[i];
+                    var X509CertificateNodes = DigitalId.getElementsByTagNameNS(XmlTrustServiceStatusList.NamespaceURI, XmlTrustServiceStatusList.ElementNames.X509Certificate);
+                    for (var j = 0; j < X509CertificateNodes.length; j++) {
+                        this.X509Certificates.push(X509CertificateNodes[j].textContent);
+                    }
+                }
+            }
+            else
+                throw new Error("Wrong XML element");
+        };
+        return TSPService;
+    }(XmlObject));
+    var TSPName = /** @class */ (function (_super) {
+        __extends(TSPName, _super);
+        function TSPName() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        TSPName.prototype.LoadXml = function (value) {
+            if (value == null)
+                throw new Error("Parameter 'value' is required");
+            if ((value.localName === XmlTrustServiceStatusList.ElementNames.TSPName) && (value.namespaceURI === XmlTrustServiceStatusList.NamespaceURI)) {
+                // Search for OtherInformation
+                var elements = value.getElementsByTagNameNS(XmlTrustServiceStatusList.NamespaceURI, XmlTrustServiceStatusList.ElementNames.Name);
+                for (var i = 0; i < elements.length; i++) {
+                    var element = elements[i];
+                    var lang = this.GetLang(element);
+                    if (!lang)
+                        throw new Error("TSPName:Name has no xml:lang attribute");
+                    this.AddItem(element.textContent, lang);
+                }
+            }
+            else
+                throw new Error("Wrong XML element");
+        };
+        return TSPName;
     }(MultiLangType));
 })(tl_create || (tl_create = {}));
 /// <reference path="sync-request.d.ts" />
@@ -725,7 +858,7 @@ var tl_create;
     var microsoftTrustedFilename = "authroot.stl";
     var microsoftDisallowedURL = "http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/disallowedcertstl.cab";
     var microsoftDisallowedFilename = "disallowedcert.stl";
-    var Microsoft = (function () {
+    var Microsoft = /** @class */ (function () {
         function Microsoft() {
         }
         Microsoft.prototype.getTrusted = function (data, skipfetch) {
@@ -860,7 +993,7 @@ var tl_create;
 var tl_create;
 (function (tl_create) {
     var appleBaseURL = "https://opensource.apple.com/source/security_certificates/";
-    var Apple = (function () {
+    var Apple = /** @class */ (function () {
         function Apple() {
         }
         Apple.prototype.getTrusted = function (datatllist, datacertlist, dataevroots, skipfetch) {
@@ -1039,7 +1172,7 @@ var Pvutils = require("pvutils");
 var tl_create;
 (function (tl_create) {
     var ciscoURL = "https://www.cisco.com/security/pki/trs/";
-    var Cisco = (function () {
+    var Cisco = /** @class */ (function () {
         function Cisco(store) {
             if (store === void 0) { store = "external"; }
             switch (store) {
@@ -1111,7 +1244,7 @@ var tl_create;
 })(tl_create || (tl_create = {}));
 var tl_create;
 (function (tl_create) {
-    var TrustedList = (function () {
+    var TrustedList = /** @class */ (function () {
         function TrustedList() {
             this.m_certificates = [];
         }
@@ -1162,3 +1295,4 @@ var tl_create;
 })(tl_create || (tl_create = {}));
 if (typeof module !== "undefined")
     module.exports = tl_create;
+//# sourceMappingURL=tl-create.js.map

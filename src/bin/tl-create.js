@@ -113,7 +113,7 @@ function parseEUTLTrusted() {
     console.log("Trust Lists: EUTL");
     var eutl = new tl_create.EUTL();
     var tl = eutl.getTrusted();
-    eutl.TrustServiceStatusList.CheckSignature()
+    Promise.all(eutl.TrustServiceStatusLists.map(function (list) { return list.CheckSignature() }))
         .then(function (verify) {
             if (!verify)
                 console.log("Warning!!!: EUTL signature is not valid");
