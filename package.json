@@ -4,7 +4,7 @@
   "main": "built/tl-create.js",
   "scripts": {
     "test": "mocha test",
-    "build": "typings install && tsc --sourceMap"
+    "build": "tsc --sourceMap"
   },
   "bin": {
     "tl-create": "./src/bin/tl-create.js"
