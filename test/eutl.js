@@ -44,13 +44,22 @@ describe("EUTL format", function () {
             .catch(done);
     });
 
-    it("EUTL parse", function () {
+    it("EU EUTL parse", function () {
         // get static file
         var eutlText = fs.readFileSync("./test/static/eutl.xml", "utf8");
 
         var eutl = new tl_create.EUTL();
         var tl = eutl.getTrusted(eutlText);
-        assert.equal(tl.Certificates.length, 101);
+        assert.equal(tl.Certificates.length, 0);
+    });
+
+    it("Member-state EUTL parse", function () {
+        // get static file
+        var eutlText = fs.readFileSync("./test/static/EL-TSL.xml", "utf8");
+
+        var eutl = new tl_create.EUTL();
+        var tl = eutl.getTrusted(eutlText);
+        assert.equal(tl.Certificates.length, 23);
     });
 
 })

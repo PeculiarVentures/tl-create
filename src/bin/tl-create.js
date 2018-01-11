@@ -12,7 +12,11 @@ global.Pkijs = require('pkijs');
 var WebCrypto = require("node-webcrypto-ossl");
 webcrypto = new WebCrypto();
 XAdES.Application.setEngine("OpenSSL", webcrypto);
-Pkijs.setEngine("OpenSSL", webcrypto, webcrypto.subtle);
+Pkijs.setEngine("OpenSSL", webcrypto, new Pkijs.CryptoEngine({
+    name: "OpenSSL",
+    crypto: webcrypto,
+    subtle: webcrypto.subtle
+}));
 var tl_create = require('../../built/tl-create.js');
 var fs = require('fs');
 var temp = require('temp').track();
