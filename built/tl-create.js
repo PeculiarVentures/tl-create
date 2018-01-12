@@ -1256,6 +1256,7 @@ var tl_create;
             configurable: true
         });
         TrustedList.prototype.AddCertificate = function (cert) {
+            cert.raw = cert.raw.replace(/-----(BEGIN|END) CERTIFICATE-----/g, "").replace(/\s/g, "");
             this.m_certificates.push(cert);
         };
         TrustedList.prototype.toJSON = function () {
@@ -1279,12 +1280,20 @@ var tl_create;
             var res = [];
             for (var _i = 0, _a = this.Certificates; _i < _a.length; _i++) {
                 var cert = _a[_i];
+                var pem = "";
+                for (var i = 0, count = 0; i < cert.raw.length; i++, count++) {
+                    if (count > 63) {
+                        pem = pem + "\r\n";
+                        count = 0;
+                    }
+                    pem = pem + cert.raw[i];
+                }
                 res.push("Operator: " + cert.operator);
                 res.push("Source: " + cert.source);
                 if (cert.evpolicy.length > 0)
                     res.push("EV OIDs: " + cert.evpolicy.join(", "));
                 res.push("-----BEGIN CERTIFICATE-----");
-                res.push(cert.raw);
+                res.push(pem);
                 res.push("-----END CERTIFICATE-----");
             }
             return res.join("\n");

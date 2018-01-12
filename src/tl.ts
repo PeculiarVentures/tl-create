@@ -19,6 +19,8 @@ namespace tl_create {
         }
 
         AddCertificate(cert: X509Certificate): void {
+            cert.raw = cert.raw.replace(/-----(BEGIN|END) CERTIFICATE-----/g, "").replace(/\s/g, "");
+
             this.m_certificates.push(cert);
         }
 
@@ -46,12 +48,20 @@ namespace tl_create {
             let res: string[] = [];
 
             for (let cert of this.Certificates) {
+                let pem = "";
+                for (let i = 0, count = 0; i < cert.raw.length; i++, count++) {
+                    if (count > 63) {
+                        pem = `${pem}\r\n`;
+                        count = 0;
+                    }
+                    pem = pem + cert.raw[i];
+                }
                 res.push("Operator: " + cert.operator);
                 res.push("Source: " + cert.source);
                 if (cert.evpolicy.length > 0)
                     res.push("EV OIDs: " + cert.evpolicy.join(", "));
                 res.push("-----BEGIN CERTIFICATE-----");
-                res.push(cert.raw);
+                res.push(pem);
                 res.push("-----END CERTIFICATE-----");
             }
 
