@@ -61,20 +61,20 @@ describe("TrustedList format", function () {
         assert.equal(tl.Certificates.length, 1);
     })
 
-    it("Concatinate trusted lists", function () {
+    it("Concatenate trusted lists", function () {
         var tl1 = new tl_create.TrustedList();
 
         assert.equal(tl1.Certificates.length, 0, "Wrong Certificates length");
 
-        tl1.AddCertificate({ raw: new Uint8Array([1]) });
-        tl1.AddCertificate({ raw: new Uint8Array([2]) });
+        tl1.AddCertificate({ raw: "A" });
+        tl1.AddCertificate({ raw: "B" });
 
         var tl2 = new tl_create.TrustedList();
 
         assert.equal(tl2.Certificates.length, 0, "Wrong Certificates length");
 
-        tl2.AddCertificate({ raw: new Uint8Array([1]) });
-        tl2.AddCertificate({ raw: new Uint8Array([2]) });
+        tl2.AddCertificate({ raw: "C" });
+        tl2.AddCertificate({ raw: "D" });
 
         var tl = tl1.concat(tl2);
         assert.equal(tl.Certificates.length, 4, "Wrong Certificates length, should be 4");
