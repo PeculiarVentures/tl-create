@@ -29,6 +29,8 @@ var parsedRootCount = 0;
 var errorParsedRootCount = 0;
 var totalRootsSkip = 0;
 
+process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
+
 /*
  * Utility functions 
  * 

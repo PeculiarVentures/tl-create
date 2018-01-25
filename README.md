@@ -59,7 +59,7 @@ node src/bin/tl-create.js --microsoft --format pem roots.pem
 
 ### Extract all Mozilla Roots
 ```
-node src/bin/tl-create.js --eutl --format pem roots.pem
+node src/bin/tl-create.js --mozilla --format pem roots.pem
 ```
 
 #### Valid Mozilla trust purposes 

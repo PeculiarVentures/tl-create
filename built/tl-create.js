@@ -977,7 +977,7 @@ var tl_create;
             var dirpath = temp.mkdirSync('authrootstl');
             fs.writeFileSync(path.join(dirpath, filename + '.cab'), res.body);
             if (process.platform === 'win32')
-                child_process.execSync('expand ' + filename + '.cab .', { cwd: dirpath });
+                child_process.execSync('expand ' + filename + '.cab ' + filename, { cwd: dirpath });
             else
                 child_process.execSync('cabextract ' + filename + '.cab', { cwd: dirpath });
             var data = fs.readFileSync(path.join(dirpath, filename));
