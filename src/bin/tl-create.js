@@ -3,11 +3,14 @@
 var program = require('commander');
 var util = require('util');
 global.request = require('sync-request');
+require("babel-polyfill");
 global.XAdES = require('xadesjs');
 global.cheerio = require("cheerio");
 global.DOMParser = require('xmldom-alpha').DOMParser;
 global.XMLSerializer = require('xmldom-alpha').XMLSerializer;
 global.XmlCore = require('xml-core');
+var pvutils = require("pvutils");
+var asn1js = require("asn1js");
 global.Pkijs = require('pkijs');
 var WebCrypto = require("node-webcrypto-ossl");
 webcrypto = new WebCrypto();
@@ -223,111 +226,229 @@ function trustFilter(item, index) {
     return false;
 }
 
-if (!program.args.length) program.help();
+if (!program.args.length)
+{
+	if(program.format !== "files")
+	{
+		program.help();
+		return;
+	}
+}
 
-else if (program.args[0]) {
+console.log('Parsing started: ' + getDateTime());
+var outputfile = program.args[0];
 
-    console.log('Parsing started: ' + getDateTime());
-    var outputfile = program.args[0];
+var eutlTL, mozTL, msTL, appleTL, ciscoTL;
 
-    var eutlTL, mozTL, msTL, appleTL, ciscoTL;
-
-    if (program.eutl) {
-        try {
-            if(!program.disallowed)
-                eutlTL = parseEUTLTrusted();
-            else
-                eutlTL = parseEUTLDisallowed();
-        } catch (e) {
-            if(e.stack)
-                console.log(e.toString(), e.stack);
-            else
-                console.log(e.toString());
-        }
-
-    }
-    if (program.mozilla) {
-        try {
-            if(!program.disallowed)
-                mozTL = parseMozillaTrusted();
-            else
-                mozTL = parseMozillaDisallowed();
-        } catch (e) {
+if (program.eutl) {
+    try {
+        if(!program.disallowed)
+            eutlTL = parseEUTLTrusted();
+        else
+            eutlTL = parseEUTLDisallowed();
+    } catch (e) {
+        if(e.stack)
+            console.log(e.toString(), e.stack);
+        else
             console.log(e.toString());
-        }
-    }
-    if (program.microsoft) {
-        try {
-            if(!program.disallowed)
-                msTL = parseMicrosoftTrusted();
-            else
-                msTL = parseMicrosoftDisallowed();
-        } catch (e) {
-            console.log(e.toString());
-        }
-    }
-    if (program.apple) {
-        try {
-            if(!program.disallowed)
-                appleTL = parseAppleTrusted();
-            else
-                appleTL = parseAppleDisallowed();
-        } catch (e) {
-            console.log(e.toString());
-        }
-    }
-    if (program.cisco) {
-        try {
-            if(!program.disallowed)
-                ciscoTL = parseCiscoTrusted(program.ciscotype);
-            else
-                ciscoTL = parseCiscoDisallowed();
-        } catch (e) {
-            console.log(e.toString());
-        }
     }
 
-    var tl = null;
-    if (mozTL)
-        tl = mozTL.concat(tl);
-    if (eutlTL)
-        tl = eutlTL.concat(tl);
-    if (msTL)
-        tl = msTL.concat(tl);
-    if (appleTL)
-        tl = appleTL.concat(tl);
-    if (ciscoTL)
-        tl = ciscoTL.concat(tl);
-
-    if (tl === null) {
-        console.log("Cannot fetch any Trust Lists.");
-        process.exit(1);
+}
+if (program.mozilla) {
+    try {
+        if(!program.disallowed)
+            mozTL = parseMozillaTrusted();
+        else
+            mozTL = parseMozillaDisallowed();
+    } catch (e) {
+        console.log(e.toString());
     }
-
-    // Filter data
-    if (filter.indexOf("ALL") === -1) {
-        console.log("Filter:");
-        console.log("    Incoming data: " + tl.Certificates.length + " certificates");
-        tl.filter(trustFilter);
-        console.log("    Filtered data: " + tl.Certificates.length + " certificates");
+}
+if (program.microsoft) {
+    try {
+        if(!program.disallowed)
+            msTL = parseMicrosoftTrusted();
+        else
+            msTL = parseMicrosoftDisallowed();
+    } catch (e) {
+        console.log(e.toString());
     }
-
-    switch ((program.format || "pem").toLowerCase()) {
-        case "js":
-            console.log("Output format: JS");
-            fs.writeFileSync(outputfile, JSON.stringify(tl));
-            break;
-        case "pkijs":
-            console.log("Output format: PKIJS");
-            var _pkijs = jsonToPKIJS(tl.toJSON());
-            fs.writeFileSync(outputfile, JSON.stringify(_pkijs));
-            break;
-        case "pem":
-            console.log("Output format: PEM");
-            fs.writeFileSync(outputfile, tl.toString());
-            break;
-        default:
-            console.log("Invalid output format");
-            break;
+}
+if (program.apple) {
+    try {
+        if(!program.disallowed)
+            appleTL = parseAppleTrusted();
+        else
+            appleTL = parseAppleDisallowed();
+    } catch (e) {
+        console.log(e.toString());
     }
+}
+if (program.cisco) {
+    try {
+        if(!program.disallowed)
+            ciscoTL = parseCiscoTrusted(program.ciscotype);
+        else
+            ciscoTL = parseCiscoDisallowed();
+    } catch (e) {
+        console.log(e.toString());
+    }
+}
+
+var tl = null;
+if (mozTL)
+    tl = mozTL.concat(tl);
+if (eutlTL)
+    tl = eutlTL.concat(tl);
+if (msTL)
+    tl = msTL.concat(tl);
+if (appleTL)
+    tl = appleTL.concat(tl);
+if (ciscoTL)
+    tl = ciscoTL.concat(tl);
+
+if (tl === null) {
+    console.log("Cannot fetch any Trust Lists.");
+    process.exit(1);
+}
+
+// Filter data
+if (filter.indexOf("ALL") === -1) {
+    console.log("Filter:");
+    console.log("    Incoming data: " + tl.Certificates.length + " certificates");
+    tl.filter(trustFilter);
+    console.log("    Filtered data: " + tl.Certificates.length + " certificates");
+}
+
+switch ((program.format || "pem").toLowerCase()) {
+    case "js":
+        console.log("Output format: JS");
+        fs.writeFileSync(outputfile, JSON.stringify(tl));
+        break;
+    case "pkijs":
+        console.log("Output format: PKIJS");
+        var _pkijs = jsonToPKIJS(tl.toJSON());
+        fs.writeFileSync(outputfile, JSON.stringify(_pkijs));
+        break;
+    case "pem":
+        console.log("Output format: PEM");
+        fs.writeFileSync(outputfile, tl.toString());
+        break;
+    case "files":
+        {
+            var crypto = Pkijs.getCrypto();
+            if(typeof crypto === "undefined")
+            {
+                console.log("Unable to initialize cryptographic engine");
+                break;
+            }
+            
+            function storeFiles(directory, trustList)
+            {
+                var targetDir = "./" + directory;
+
+                var PKICertificate = Pkijs.Certificate;
+                
+                var files = [];
+                var noIdFiles = [];
+
+                for(var i = 0; i < trustList.Certificates.length; i++)
+                {
+	                var fileRaw = pvutils.stringToArrayBuffer(pvutils.fromBase64(trustList.Certificates[i].raw));
+	
+	                var asn1 = asn1js.fromBER(fileRaw);
+	                if(asn1.offset === (-1))
+		                continue;
+	
+	                var certificate;
+	
+	                try
+	                {
+		                certificate = new PKICertificate({ schema: asn1.result });
+	                }
+	                catch(ex)
+	                {
+		                continue;
+	                }
+	
+	                if("extensions" in certificate)
+	                {
+		                for(var j = 0; j < certificate.extensions.length; j++)
+		                {
+			                if(certificate.extensions[j].extnID === "2.5.29.14") // SubjectKeyIdentifier
+			                {
+				                files.push({
+					                name: pvutils.bufferToHexCodes(certificate.extensions[j].parsedValue.valueBlock.valueHex),
+					                content: fileRaw.slice(0)
+				                });
+				
+				                break;
+			                }
+			                
+			                noIdFiles.push({
+                                publicKey: certificate.subjectPublicKeyInfo.subjectPublicKey.valueBlock.valueHex.slice(0),
+				                content: fileRaw.slice(0)
+                            });
+		                }
+	                }
+                }
+                
+                if((files.length) || (noIdFiles.length))
+                {
+	                if(!fs.existsSync(targetDir))
+		                fs.mkdirSync(targetDir);
+                }
+                
+                if(files.length)
+                {
+	                for(var k = 0; k < files.length; k++)
+		                fs.writeFileSync(targetDir + "/" + files[k].name, Buffer.from(files[k].content));
+                }
+                
+                if(noIdFiles.length)
+                {
+                    var sequence = Promise.resolve();
+                    
+                    for(var m = 0; m < noIdFiles.length; m++)
+	                {
+		                sequence = sequence.then((function(_m)
+		                {
+			                return function()
+			                {
+				                return crypto.digest({ name: "SHA-1" }, noIdFiles[_m].publicKey);
+			                }
+		                })(m));
+		                
+		                sequence = sequence.then((function(_m)
+		                {
+			                return function(result)
+			                {
+				                fs.writeFileSync(targetDir + "/" + pvutils.bufferToHexCodes(result), Buffer.from(noIdFiles[_m].content));
+			                }
+		                })(m));
+	                }
+                    
+                    return sequence;
+                }
+            }
+            
+            if(mozTL)
+                storeFiles("mozilla", mozTL);
+
+            if(eutlTL)
+	            storeFiles("eutl", eutlTL);
+
+            if(msTL)
+	            storeFiles("microsoft", msTL);
+
+            if(appleTL)
+	            storeFiles("apple", appleTL);
+
+            if(ciscoTL)
+	            storeFiles("cisco", ciscoTL);
+        }
+        break;
+    default:
+        console.log("Invalid output format");
+        break;
 }

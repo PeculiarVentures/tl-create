@@ -106,7 +106,10 @@ node src/bin/tl-create.js --mozilla --microsoft --for "SERVER_AUTH" --format pem
 js
 pkijs
 pem
+files
 ```
+
+The "files" format is intended to store all certificates in separate files under specific directory. For example if a certificate exists in Mozilla Trust List and has "SubjectKeyIdentifier" equal to "ABABABABABABABBB" the certificate content would be stored under "mozilla/ABABABABABABABBB". So, for Mozilla Trust List root directory would be "mozilla", for Microsoft - "microsoft", for Apple - "apple", for Cisco - "cisco".
 
 **NOTE**: Default ouput format is 'js'
 
