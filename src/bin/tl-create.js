@@ -22,15 +22,7 @@ Pkijs.setEngine("OpenSSL", webcrypto, new Pkijs.CryptoEngine({
 }));
 var tl_create = require('../../built/tl-create.js');
 var fs = require('fs');
-var temp = require('temp').track();
-var path = require('path');
-var child_process = require('child_process');
-var prefix = "tsl:";//used by eutl 
-var isFirstOutput = true;
-var totalRootCount = 0;
-var parsedRootCount = 0;
-var errorParsedRootCount = 0;
-var totalRootsSkip = 0;
+var nodeCrypto = require('crypto');
 
 /*
  * Utility functions 
@@ -346,9 +338,13 @@ switch ((program.format || "pem").toLowerCase()) {
                 break;
             }
             
+            var filesJSON = {};
+            
             function storeFiles(directory, trustList)
             {
-                var targetDir = "./" + directory;
+                var targetDir = "./roots/" + directory;
+                
+                filesJSON[directory] = [];
 
                 var PKICertificate = Pkijs.Certificate;
                 
@@ -374,6 +370,9 @@ switch ((program.format || "pem").toLowerCase()) {
 		                continue;
 	                }
 	
+	                //certificate.subject.valueBeforeDecode
+                    var nameID = nodeCrypto.createHash("SHA1").update(Buffer.from(certificate.subject.valueBeforeDecode)).digest().toString("hex").toUpperCase();
+                    
 	                if("extensions" in certificate)
 	                {
 		                for(var j = 0; j < certificate.extensions.length; j++)
@@ -382,6 +381,7 @@ switch ((program.format || "pem").toLowerCase()) {
 			                {
 				                files.push({
 					                name: pvutils.bufferToHexCodes(certificate.extensions[j].parsedValue.valueBlock.valueHex),
+					                nameID: nameID,
 					                content: fileRaw.slice(0)
 				                });
 				
@@ -390,6 +390,7 @@ switch ((program.format || "pem").toLowerCase()) {
 			                
 			                noIdFiles.push({
                                 publicKey: certificate.subjectPublicKeyInfo.subjectPublicKey.valueBlock.valueHex.slice(0),
+				                nameID: nameID,
 				                content: fileRaw.slice(0)
                             });
 		                }
@@ -405,35 +406,36 @@ switch ((program.format || "pem").toLowerCase()) {
                 if(files.length)
                 {
 	                for(var k = 0; k < files.length; k++)
+	                {
+		                filesJSON[directory].push({
+			                k: files[k].name,
+                            n: files[k].nameID
+		                });
+
 		                fs.writeFileSync(targetDir + "/" + files[k].name, Buffer.from(files[k].content));
+	                }
                 }
                 
                 if(noIdFiles.length)
                 {
-                    var sequence = Promise.resolve();
-                    
                     for(var m = 0; m < noIdFiles.length; m++)
 	                {
-		                sequence = sequence.then((function(_m)
-		                {
-			                return function()
-			                {
-				                return crypto.digest({ name: "SHA-1" }, noIdFiles[_m].publicKey);
-			                }
-		                })(m));
-		                
-		                sequence = sequence.then((function(_m)
-		                {
-			                return function(result)
-			                {
-				                fs.writeFileSync(targetDir + "/" + pvutils.bufferToHexCodes(result), Buffer.from(noIdFiles[_m].content));
-			                }
-		                })(m));
+	                	var keyID = nodeCrypto.createHash("SHA1").update(Buffer.from(noIdFiles[m].publicKey)).digest().toString("hex").toUpperCase();
+		
+		                filesJSON[directory].push({
+			                k: keyID,
+                            n: noIdFiles[m].nameID
+		                });
+		
+		                fs.writeFileSync(targetDir + "/" + keyID, Buffer.from(noIdFiles[m].content));
 	                }
-                    
-                    return sequence;
                 }
-            }
+                
+                fs.writeFileSync("./roots/index.json", Buffer.from(JSON.stringify(filesJSON)));
+	        }
+	
+	        if(!fs.existsSync("./roots"))
+	            fs.mkdirSync("./roots");
             
             if(mozTL)
                 storeFiles("mozilla", mozTL);

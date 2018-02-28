@@ -35,7 +35,10 @@ before_install:
   - npm --version
   - gcc --version
   - npm install mocha -g
-  
+
+install:
+  - npm run build
+
 script:
   - npm test
 

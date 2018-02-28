@@ -1,6 +1,6 @@
 {
   "name": "tl-create",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "main": "built/tl-create.js",
   "scripts": {
     "test": "mocha --require babel-polyfill test",
