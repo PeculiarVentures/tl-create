@@ -251,8 +251,16 @@ var tl_create;
             while (toProcess.length !== 0) {
                 var url = toProcess.pop();
                 processed.push(url);
-                var res = request('GET', url, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
-                var eutl = this.loadTSL(res.getBody('utf8'));
+                var res = void 0;
+                var tlsBody = void 0;
+                try {
+                    res = request('GET', url, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
+                    tlsBody = res.getBody('utf8');
+                }
+                catch (ex) {
+                    continue;
+                }
+                var eutl = this.loadTSL(tlsBody);
                 this.TrustServiceStatusLists.push(eutl);
                 for (var _i = 0, _a = eutl.SchemaInformation.Pointers; _i < _a.length; _i++) {
                     var pointer = _a[_i];
@@ -977,7 +985,7 @@ var tl_create;
             var dirpath = temp.mkdirSync('authrootstl');
             fs.writeFileSync(path.join(dirpath, filename + '.cab'), res.body);
             if (process.platform === 'win32')
-                child_process.execSync('expand ' + filename + '.cab ' + filename, { cwd: dirpath });
+                child_process.execSync('expand ' + filename + '.cab .', { cwd: dirpath });
             else
                 child_process.execSync('cabextract ' + filename + '.cab', { cwd: dirpath });
             var data = fs.readFileSync(path.join(dirpath, filename));

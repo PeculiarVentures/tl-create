@@ -24,8 +24,8 @@ describe("EUTL format", function () {
         var eutl = new tl_create.TrustServiceStatusList();
         var xml = new DOMParser().parseFromString(eutlText, "application/xml");
         eutl.LoadXml(xml);
-        assert.equal(eutl.SchemaInformation.Pointers.length, 48);
-        assert.equal(eutl.SchemaInformation.Pointers[0].X509Certificates.length, 2);
+        assert.equal(eutl.SchemaInformation.Pointers.length, 46);
+        assert.equal(eutl.SchemaInformation.Pointers[0].X509Certificates.length, 5);
     })
 
     it("TrustServiceStatusList check signature", function (done) {

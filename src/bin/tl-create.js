@@ -118,8 +118,10 @@ program.parse(process.argv);
 
 function parseEUTLTrusted() {
     console.log("Trust Lists: EUTL");
+    
     var eutl = new tl_create.EUTL();
     var tl = eutl.getTrusted();
+    
     Promise.all(eutl.TrustServiceStatusLists.map(function (list) { return list.CheckSignature() }))
         .then(function (verify) {
             if (!verify)
@@ -130,7 +132,8 @@ function parseEUTLTrusted() {
         .catch(function (e) {
             console.log("Error:", e.message);
         });
-    return tl;
+	
+	return tl;
 }
 
 function parseEUTLDisallowed() {

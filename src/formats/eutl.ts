@@ -30,8 +30,21 @@ namespace tl_create {
             while (toProcess.length !== 0) {
                 let url = toProcess.pop();
                 processed.push(url);
-                let res = request('GET', url, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
-                let eutl = this.loadTSL(res.getBody('utf8'));
+
+                let res:any;
+                let tlsBody:any;
+
+                try
+                {
+                    res = request('GET', url, { 'timeout': 10000, 'retry': true, 'headers': { 'user-agent': 'nodejs' } });
+                    tlsBody = res.getBody('utf8');
+                }
+                catch(ex)
+                {
+                    continue;
+                }
+
+                let eutl = this.loadTSL(tlsBody);
 
                 this.TrustServiceStatusLists.push(eutl);
 

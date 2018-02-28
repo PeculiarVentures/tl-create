@@ -1,4 +1,5 @@
-/.vscode
+.vscode
+.idea
+/built
 /node_modules
-/typings
-/test/test.js
+package-lock.json

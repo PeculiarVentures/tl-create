@@ -3,7 +3,7 @@
   "version": "1.3.3",
   "main": "built/tl-create.js",
   "scripts": {
-    "test": "mocha test",
+    "test": "mocha --require babel-polyfill test",
     "build": "tsc --sourceMap"
   },
   "bin": {
