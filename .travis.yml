@@ -35,10 +35,6 @@ before_install:
   - npm --version
   - gcc --version
   - npm install mocha -g
-  - npm install typescript -g
-
-install:
-  - npm run build
 
 script:
   - npm test
