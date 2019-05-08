@@ -29,12 +29,13 @@
     "xmldsigjs": "^2.0.25"
   },
   "devDependencies": {
-    "typescript": "^2.7.2",
     "@types/asn1js": "0.0.1",
     "@types/cheerio": "^0.22.0",
     "@types/node": "^7.0.10",
     "@types/pkijs": "0.0.1",
-    "@types/pvutils": "0.0.1"
+    "@types/pvutils": "0.0.1",
+    "mocha": "^5.2.0",
+    "typescript": "^2.7.2"
   },
   "repository": {
     "type": "git",
