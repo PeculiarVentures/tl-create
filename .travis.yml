@@ -1,7 +1,7 @@
 language: node_js
 node_js:
-  - "6"
-  - "5"
+  - "7"
+  - "10"
   
 env:
   - CXX=g++
@@ -34,7 +34,6 @@ before_install:
   - node --version
   - npm --version
   - gcc --version
-  - npm install mocha -g
 
 script:
   - npm test
