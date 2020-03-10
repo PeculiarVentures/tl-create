@@ -1,9 +1,10 @@
 .python-version/
 .vscode/
 .idea/
-node_modules/
-package-lock.json/
-build/
+src/
+test/
 coverage/
 .nyc_output/
+travis.yaml
+ts*.json
 .DS_Store
