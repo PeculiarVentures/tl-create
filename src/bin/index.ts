@@ -303,16 +303,16 @@ if (filter.indexOf("ALL") === -1) {
 switch ((program.format || "pem").toLowerCase()) {
   case "js":
     console.log("Output format: JS");
-    fs.writeFileSync(outputFile, JSON.stringify(tl));
+    fs.writeFileSync(outputFile, JSON.stringify(tl), { flag: "w+" });
     break;
   case "pkijs":
     console.log("Output format: PKIJS");
     let _pkijs = jsonToPKIJS(tl.toJSON());
-    fs.writeFileSync(outputFile, JSON.stringify(_pkijs));
+    fs.writeFileSync(outputFile, JSON.stringify(_pkijs), { flag: "w+" });
     break;
   case "pem":
     console.log("Output format: PEM");
-    fs.writeFileSync(outputFile, tl.toString());
+    fs.writeFileSync(outputFile, tl.toString(), { flag: "w+" });
     break;
   case "files":
     {

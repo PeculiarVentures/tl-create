@@ -1,5 +1,5 @@
 import * as XmlCore from "xml-core";
-const request = require("sync-request");
+import request from "sync-request";
 import { TrustedList, X509Certificate } from "../tl";
 
 const MozillaAttributes = {

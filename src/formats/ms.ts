@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as pvutils from "pvutils";
 import * as temp from "temp";
-const request = require("sync-request");
+import request from "sync-request";
 const asn1js = require("asn1js");
 import { TrustedList, X509Certificate } from "../tl";
 

@@ -1,7 +1,7 @@
 import * as XmlCore from "xml-core";
 import * as XmlDSigJs from "xmldsigjs";
 import * as XAdES from "xadesjs";
-const request = require("sync-request");
+import request from "sync-request";
 import { TrustedList } from "../tl";
 import { crypto } from "../crypto";
 

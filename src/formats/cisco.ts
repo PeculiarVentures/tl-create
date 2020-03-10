@@ -1,6 +1,6 @@
 import * as pvutils from "pvutils";
+import request from "sync-request";
 import { TrustedList } from "../tl";
-const request = require("sync-request");
 import {asn1js, pkijs} from "../crypto";
 
 const ciscoURL = "https://www.cisco.com/security/pki/trs/";
@@ -35,7 +35,9 @@ export class Cisco {
 
     if (!data) {
       let res = request("GET", this.fetchurl, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
-      dataBuf = res.body.buffer;
+      dataBuf = Buffer.isBuffer(res.body)
+        ? new Uint8Array(res.body).buffer
+        : new Uint8Array(Buffer.from(res.body)).buffer;
     } else {
       dataBuf = pvutils.stringToArrayBuffer(data);
     }

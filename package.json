@@ -27,7 +27,7 @@
     "commander": "^4.1.1",
     "pkijs": "latest",
     "pvutils": "latest",
-    "sync-request": "^3.0.1",
+    "sync-request": "^6.1.0",
     "temp": "^0.9.1",
     "tslib": "^1.11.1",
     "xadesjs": "^2.0.16",

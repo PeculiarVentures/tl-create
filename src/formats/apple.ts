@@ -1,4 +1,4 @@
-const request = require("sync-request");
+import request from "sync-request";
 import cheerio from "cheerio";
 import { TrustedList, X509Certificate } from "../tl";
 
