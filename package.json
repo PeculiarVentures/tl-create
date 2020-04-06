@@ -37,16 +37,16 @@
   },
   "devDependencies": {
     "@types/asn1js": "0.0.1",
-    "@types/cheerio": "^0.22.0",
+    "@types/cheerio": "^0.22.17",
     "@types/mocha": "^7.0.2",
     "@types/node": "^7.0.10",
     "@types/pkijs": "0.0.1",
     "@types/pvutils": "0.0.1",
     "@types/temp": "^0.8.34",
-    "mocha": "^7.1.0",
-    "nyc": "^15.0.0",
+    "mocha": "^7.1.1",
+    "nyc": "^15.0.1",
     "rimraf": "^3.0.2",
-    "ts-node": "^8.6.2",
+    "ts-node": "^8.8.2",
     "typescript": "^3.8.3"
   },
   "repository": {
@@ -72,6 +72,16 @@
     "reporter": [
       "text-summary",
       "html"
+    ]
+  },
+  "mocha": {
+    "require": "ts-node/register",
+    "extension": [
+      "ts"
+    ],
+    "timeout": 15000,
+    "spec": [
+      "test/**/*.ts"
     ]
   }
 }
