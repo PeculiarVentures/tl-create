@@ -2,7 +2,7 @@
 
 import program from "commander";
 import * as XAdES from "xadesjs";
-const { DOMParser, XMLSerializer } = require("xmldom-alpha");
+import { DOMParser, XMLSerializer } from "xmldom";
 import * as pvutils from "pvutils";
 import * as nodeCrypto from "crypto";
 import * as tl_create from "..";
