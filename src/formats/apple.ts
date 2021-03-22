@@ -92,7 +92,7 @@ export class Apple {
     let verNum = -1;
 
     ch("td").has("img").find("a").each((i, anchor) => {
-      let href = (<any>anchor.attribs)["href"];
+      let href = (anchor as cheerio.TagElement).attribs["href"];
       if (href.startsWith("security_certificates-")) {
         let linkVer = href.replace(/^security_certificates-/, "").replace(/\/*$/, "");
         let linkArr = linkVer.split(".");
@@ -121,7 +121,7 @@ export class Apple {
     let filenames: string[] = [];
 
     ch("td").has("img").find("a").each(function(i, anchor) {
-      let href = (<any>anchor.attribs)["href"];
+      let href = (anchor as cheerio.TagElement).attribs["href"];
       if (href.endsWith("/certificates/") || href.endsWith("/../") || (href === "AppleDEVID.cer"))
         return;
 
@@ -141,7 +141,7 @@ export class Apple {
     let filenames: string[] = [];
 
     ch("td").has("img").find("a").each(function(i, anchor) {
-      let href = (<any>anchor.attribs)["href"];
+      let href = (anchor as cheerio.TagElement).attribs["href"];
       if (href.endsWith("/certificates/") || href.endsWith("/../"))
         return;
 

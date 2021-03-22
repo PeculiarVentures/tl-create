@@ -54,7 +54,7 @@ program
   .option("-d, --disallowed", "Fetch disallowed roots instead of trusted");
 
 
-program.on("--help", function() {
+program.on("--help", () => {
   console.log("  Examples:");
   console.log("");
   console.log("    $ tl-create --mozilla --format pem roots.pem");
@@ -68,7 +68,7 @@ program.on("--help", function() {
   console.log("");
 });
 
-program.on("--help", function() {
+program.on("--help", () => {
   console.log("  Types:");
   console.log("");
   console.log("    DIGITAL_SIGNATURE");

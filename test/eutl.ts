@@ -2,17 +2,17 @@ import * as assert from "assert";
 import * as fs from "fs";
 import * as tl_create from "../src";
 
-describe("EUTL format", function() {
+describe("EUTL format", () => {
 
-  it("TrustServiceStatusList LoadXML", function() {
+  it("TrustServiceStatusList LoadXML", () => {
     // get static file
     let eutlText = fs.readFileSync("./test/static/eutl.xml", "utf8");
 
     let eutl = new tl_create.TrustServiceStatusList();
     let xml = new DOMParser().parseFromString(eutlText, "application/xml");
     eutl.LoadXml(xml);
-    assert.equal(eutl.SchemaInformation.Pointers.length, 46);
-    assert.equal(eutl.SchemaInformation.Pointers[0].X509Certificates.length, 5);
+    assert.strictEqual(eutl.SchemaInformation.Pointers.length, 46);
+    assert.strictEqual(eutl.SchemaInformation.Pointers[0].X509Certificates.length, 5);
   });
 
   it("TrustServiceStatusList check signature", async () => {
@@ -24,25 +24,25 @@ describe("EUTL format", function() {
     eutl.LoadXml(xml);
 
     const v = await eutl.CheckSignature();
-    assert.equal(v, true, "Wrong signature");
+    assert.strictEqual(v, true, "Wrong signature");
   });
 
-  it("EU EUTL parse", function() {
+  it("EU EUTL parse", () => {
     // get static file
     let eutlText = fs.readFileSync("./test/static/eutl.xml", "utf8");
 
     let eutl = new tl_create.EUTL();
     let tl = eutl.getTrusted(eutlText);
-    assert.equal(tl.Certificates.length, 0);
+    assert.strictEqual(tl.Certificates.length, 0);
   });
 
-  it("Member-state EUTL parse", function() {
+  it("Member-state EUTL parse", () => {
     // get static file
     let eutlText = fs.readFileSync("./test/static/EL-TSL.xml", "utf8");
 
     let eutl = new tl_create.EUTL();
     let tl = eutl.getTrusted(eutlText);
-    assert.equal(tl.Certificates.length, 23);
+    assert.strictEqual(tl.Certificates.length, 23);
   });
 
 });
