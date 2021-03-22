@@ -2,26 +2,26 @@ import * as assert from "assert";
 import * as fs from "fs";
 import * as tl_create from "../src";
 
-describe("Mozilla format", function() {
+describe("Mozilla format", () => {
 
-  it("Parse incoming text for trusted roots", function() {
+  it("Parse incoming text for trusted roots", () => {
     // get static file
     let mozText = fs.readFileSync("./test/static/mozilla.txt", "utf8");
 
     let moz = new tl_create.Mozilla();
     let tl = moz.getTrusted(mozText);
 
-    assert.equal(tl.Certificates.length, 157);
+    assert.strictEqual(tl.Certificates.length, 157);
   });
 
-  it("Parse incoming text for disallowed roots", function() {
+  it("Parse incoming text for disallowed roots", () => {
     // get static file
     let mozText = fs.readFileSync("./test/static/mozilla.txt", "utf8");
 
     let moz = new tl_create.Mozilla();
     let tl = moz.getDisallowed(mozText);
 
-    assert.equal(tl.Certificates.length, 19);
+    assert.strictEqual(tl.Certificates.length, 19);
   });
 
 });

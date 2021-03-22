@@ -7,11 +7,27 @@ import { crypto } from "../crypto";
 
 XAdES.Application.setEngine("@peculiar/webcrypto", crypto);
 
-const euURL = "https://ec.europa.eu/information_society/policy/esignature/trusted-list/tl-mp.xml";
+export interface EUTLParameters {
+  url?: string;
+  timeout?: number;
+}
 
 export class EUTL {
 
+  public static URL = "https://ec.europa.eu/information_society/policy/esignature/trusted-list/tl-mp.xml";
+  public static TIMEOUT = 1e4;
+
   public TrustServiceStatusLists: TrustServiceStatusList[] = [];
+  public url: string;
+  public timeout: number;
+
+  constructor({
+    url = EUTL.URL,
+    timeout = EUTL.TIMEOUT,
+  }: EUTLParameters = {}) {
+    this.url = url;
+    this.timeout = timeout;
+  }
 
   loadTSL(data: string): TrustServiceStatusList {
     let eutl = new TrustServiceStatusList();
@@ -23,7 +39,7 @@ export class EUTL {
   }
 
   fetchAllTSLs(): void {
-    let toProcess: string[] = [euURL];
+    let toProcess: string[] = [this.url];
     let processed: string[] = [];
 
     this.TrustServiceStatusLists = [];
@@ -36,7 +52,7 @@ export class EUTL {
       let tlsBody: any;
 
       try {
-        res = request("GET", url, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
+        res = request("GET", url, { "timeout": this.timeout, "retry": true, "headers": { "user-agent": "nodejs" } });
         tlsBody = res.getBody("utf8");
       }
       catch (ex) {

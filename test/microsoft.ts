@@ -11,7 +11,7 @@ describe("Microsoft format", () => {
     let ms = new tl_create.Microsoft();
     let tl = ms.getTrusted(msText, true);
 
-    assert.equal(tl.Certificates.length, 356);
+    assert.strictEqual(tl.Certificates.length, 356);
   });
 
   it("Parse incoming text for disallowed roots", () => {
@@ -21,7 +21,7 @@ describe("Microsoft format", () => {
     let ms = new tl_create.Microsoft();
     let tl = ms.getDisallowed(msText, true);
 
-    assert.equal(tl.Certificates.length, 64);
+    assert.strictEqual(tl.Certificates.length, 64);
   });
 
 });

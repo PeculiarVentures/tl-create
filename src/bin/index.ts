@@ -2,7 +2,7 @@
 
 import program from "commander";
 import * as XAdES from "xadesjs";
-const { DOMParser, XMLSerializer } = require("xmldom-alpha");
+import { DOMParser, XMLSerializer } from "xmldom";
 import * as pvutils from "pvutils";
 import * as nodeCrypto from "crypto";
 import * as tl_create from "..";
@@ -42,7 +42,7 @@ function getDateTime() {
 }
 
 program
-  .version(require(path.join(__dirname, "../../package.json")).version)
+  .version(require(path.join(__dirname, "../../../package.json")).version)
   .option("-e, --eutl", "EU Trust List Parse")
   .option("-m, --mozilla", "Mozilla Trust List Parse")
   .option("-s, --microsoft", "Microsoft Trust List Parse")
@@ -54,7 +54,7 @@ program
   .option("-d, --disallowed", "Fetch disallowed roots instead of trusted");
 
 
-program.on("--help", function() {
+program.on("--help", () => {
   console.log("  Examples:");
   console.log("");
   console.log("    $ tl-create --mozilla --format pem roots.pem");
@@ -68,7 +68,7 @@ program.on("--help", function() {
   console.log("");
 });
 
-program.on("--help", function() {
+program.on("--help", () => {
   console.log("  Types:");
   console.log("");
   console.log("    DIGITAL_SIGNATURE");
@@ -102,14 +102,14 @@ function parseEUTLTrusted() {
   let eutl = new tl_create.EUTL();
   let tl = eutl.getTrusted();
 
-  Promise.all(eutl.TrustServiceStatusLists.map(function(list) { return list.CheckSignature(); }))
-    .then(function(verify) {
+  Promise.all(eutl.TrustServiceStatusLists.map(function (list) { return list.CheckSignature(); }))
+    .then(function (verify) {
       if (!verify)
         console.log("Warning!!!: EUTL signature is not valid");
       else
         console.log("Information: EUTL signature is valid");
     })
-    .catch(function(e) {
+    .catch(function (e) {
       console.log("Error:", e.message);
     });
 
@@ -167,13 +167,13 @@ function parseCiscoTrusted(ciscoType: string) {
   let cisco = new tl_create.Cisco(ciscoType);
   let tl = cisco.getTrusted();
   cisco.verifyP7()
-    .then(function(verify) {
+    .then(function (verify) {
       if (!verify)
         console.log("Warning!!!: Cisco PKCS#7 signature verification failed");
       else
         console.log("Information: Cisco PKCS#7 signature verification successful");
     })
-    .catch(function(e) {
+    .catch(function (e) {
       console.log("Error:", e);
     });
   return tl;
@@ -386,7 +386,20 @@ switch ((program.format || "pem").toLowerCase()) {
               n: files[k].nameID
             });
 
-            fs.writeFileSync(targetDir + "/" + files[k].name, Buffer.from(files[k].content));
+            // TODO: temporary workaround issue with mozilla cert
+            try {
+              fs.writeFileSync(targetDir + "/" + files[k].name, Buffer.from(files[k].content));
+
+              filesJSON[directory].push({
+                k: files[k].name,
+                n: files[k].nameID
+              });
+            } catch (err) {
+              if (err.code !== "ENAMETOOLONG") {
+                throw err;
+              }
+              console.log(err.message);
+            }
           }
         }
 

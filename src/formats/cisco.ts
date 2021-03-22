@@ -3,25 +3,40 @@ import request from "sync-request";
 import { TrustedList } from "../tl";
 import {asn1js, pkijs} from "../crypto";
 
-const ciscoURL = "https://www.cisco.com/security/pki/trs/";
+export interface CiscoParameters {
+  url?: string;
+  timeout?: number;
+}
 
 export class Cisco {
-  fetchurl: string;
-  source: string;
-  signedData: any;
 
-  constructor(store: string = "external") {
+  public static URL = "https://www.cisco.com/security/pki/trs/";
+  public static TIMEOUT = 1e4;
+
+  public url: string;
+  public timeout: number;
+  public fetchurl: string;
+  public source: string;
+  public signedData: any;
+
+  constructor(store: string = "external", {
+    url = Cisco.URL,
+    timeout = Cisco.TIMEOUT,
+  }: CiscoParameters = {}) {
+    this.url = url;
+    this.timeout = timeout;
+
     switch (store) {
       case "external":
-        this.fetchurl = ciscoURL + "ios.p7b";
+        this.fetchurl = this.url + "ios.p7b";
         this.source = "Cisco Trusted External Root Bundle";
         break;
       case "union":
-        this.fetchurl = ciscoURL + "ios_union.p7b";
+        this.fetchurl = this.url + "ios_union.p7b";
         this.source = "Cisco Trusted Union Root Bundle";
         break;
       case "core":
-        this.fetchurl = ciscoURL + "ios_core.p7b";
+        this.fetchurl = this.url + "ios_core.p7b";
         this.source = "Cisco Trusted Core Root Bundle";
         break;
       default:
@@ -34,7 +49,7 @@ export class Cisco {
     let dataBuf: ArrayBuffer;
 
     if (!data) {
-      let res = request("GET", this.fetchurl, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
+      let res = request("GET", this.fetchurl, { "timeout": this.timeout, "retry": true, "headers": { "user-agent": "nodejs" } });
       dataBuf = Buffer.isBuffer(res.body)
         ? new Uint8Array(res.body).buffer
         : new Uint8Array(Buffer.from(res.body)).buffer;

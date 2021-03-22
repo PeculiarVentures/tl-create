@@ -13,7 +13,7 @@ describe("Apple format", () => {
     const apple = new tl_create.Apple();
     const tl = apple.getTrusted(appleTLListText, appleCertListText, appleEVRootText, true);
 
-    assert.equal(tl.Certificates.length, 188);
+    assert.strictEqual(tl.Certificates.length, 188);
   });
 
   it("Parse incoming text for disallowed roots", () => {
@@ -24,7 +24,7 @@ describe("Apple format", () => {
     let apple = new tl_create.Apple();
     let tl = apple.getDisallowed(appleTLListText, appleCertListText, true);
 
-    assert.equal(tl.Certificates.length, 12);
+    assert.strictEqual(tl.Certificates.length, 12);
   });
 
 });

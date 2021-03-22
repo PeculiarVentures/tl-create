@@ -57,16 +57,30 @@ declare type MozillaAttribute = {
   value: any;
 };
 
-const mozillaURL = "https://hg.mozilla.org/mozilla-central/raw-file/tip/security/nss/lib/ckfw/builtins/certdata.txt";
-
+export interface MozillaParameters {
+  url?: string;
+  timeout?: number;
+}
 export class Mozilla {
+
+  public static URL = "https://hg.mozilla.org/mozilla-central/raw-file/tip/security/nss/lib/ckfw/builtins/certdata.txt";
+  public static TIMEOUT = 1e4;
+
+  public url: string;
+  public timeout: number;
 
   protected attributes: any[] = [];
   protected certText: string[] | null = null;
   protected curIndex: number = 0;
   protected codeFilterList: string[];
 
-  constructor(codeFilter: string[] = ["CKA_TRUST_ALL"]) {
+  constructor(codeFilter: string[] = ["CKA_TRUST_ALL"], {
+    url = Mozilla.URL,
+    timeout = Mozilla.TIMEOUT,
+  }: MozillaParameters = {}) {
+    this.url = url;
+    this.timeout = timeout;
+
     for (let i in codeFilter) {
       codeFilter[i] = "CKA_TRUST_" + codeFilter[i];
     }
@@ -88,7 +102,7 @@ export class Mozilla {
     if (data) {
       this.certText = data.replace(/\r\n/g, "\n").split("\n");
     } else {
-      let res = request("GET", mozillaURL, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
+      let res = request("GET", this.url, { "timeout": this.timeout, "retry": true, "headers": { "user-agent": "nodejs" } });
       this.certText = res.body.toString().replace(/\r\n/g, "\n").split("\n");
     }
     this.findObjectDefinitionsSegment();
