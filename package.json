@@ -1,6 +1,6 @@
 {
   "name": "tl-create",
-  "version": "1.3.6",
+  "version": "1.4.0",
   "main": "build/cjs/index.js",
   "module": "build/mjs/index.js",
   "types": "build/types/index.d.ts",
@@ -24,7 +24,7 @@
     "postpub:next": "git push"
   },
   "bin": {
-    "tl-create": "./build/cjs/bin/index.js"
+    "tl-create": "build/cjs/bin/index.js"
   },
   "author": "Asif ur rahman",
   "license": "MIT",
