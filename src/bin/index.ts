@@ -42,7 +42,7 @@ function getDateTime() {
 }
 
 program
-  .version(require(path.join(__dirname, "../../package.json")).version)
+  .version(require(path.join(__dirname, "../../../package.json")).version)
   .option("-e, --eutl", "EU Trust List Parse")
   .option("-m, --mozilla", "Mozilla Trust List Parse")
   .option("-s, --microsoft", "Microsoft Trust List Parse")
