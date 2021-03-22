@@ -57,7 +57,7 @@ declare type MozillaAttribute = {
   value: any;
 };
 
-const mozillaURL = "http://mxr.mozilla.org/mozilla/source/security/nss/lib/ckfw/builtins/certdata.txt?raw=1";
+const mozillaURL = "https://hg.mozilla.org/mozilla-central/raw-file/tip/security/nss/lib/ckfw/builtins/certdata.txt";
 
 export class Mozilla {
 
