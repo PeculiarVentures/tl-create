@@ -4,6 +4,7 @@ export interface X509Certificate {
   trust?: string[];
   source?: string;
   evpolicy?: string[];
+  thumbprint?: string;
 }
 
 export declare type ExportX509CertificateJSON = X509Certificate[];

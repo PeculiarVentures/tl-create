@@ -192,7 +192,8 @@ export class Microsoft {
         trust: [],
         operator: "",
         source: "Microsoft",
-        evpolicy: []
+        evpolicy: [],
+        thumbprint: certid
       };
 
       for (let metadata of ctlentry_parsed.result.CertMetaData) {
