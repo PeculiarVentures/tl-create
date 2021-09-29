@@ -1,4 +1,4 @@
-import request from "sync-request";
+import fetch from "node-fetch";
 import cheerio from "cheerio";
 import { TrustedList, X509Certificate } from "../tl";
 
@@ -27,12 +27,12 @@ export class Apple {
     this.timeout = timeout;
   }
 
-  getTrusted(dataTlList?: string, dataCertList?: string, dataEvRoots?: string, skipFetch = false, { }: AppleParameters = {}): TrustedList {
+  async getTrusted(dataTlList?: string, dataCertList?: string, dataEvRoots?: string, skipFetch = false): Promise<TrustedList> {
     let tl = new TrustedList();
 
-    let tlVersion = this.getLatestVersion(dataTlList);
-    let certNames = this.getTrustedCertList(tlVersion, dataCertList);
-    let evRoots = this.getEVOIDList(tlVersion, dataEvRoots);
+    let tlVersion = await this.getLatestVersion(dataTlList);
+    let certNames = await this.getTrustedCertList(tlVersion, dataCertList);
+    let evRoots = await this.getEVOIDList(tlVersion, dataEvRoots);
 
     if (skipFetch === false)
       process.stdout.write("Fetching certificates");
@@ -44,7 +44,7 @@ export class Apple {
         process.stdout.write(".");
 
       if (skipFetch === false)
-        certRaw = this.getTrustedCert(tlVersion, certName);
+        certRaw = await this.getTrustedCert(tlVersion, certName);
       if (certName in evRoots)
         evPolicies = evRoots[certName];
 
@@ -65,11 +65,11 @@ export class Apple {
     return tl;
   }
 
-  getDisallowed(dataTlList?: string, dataDisCertList?: string, skipFetch = false): TrustedList {
+  async getDisallowed(dataTlList?: string, dataDisCertList?: string, skipFetch = false): Promise<TrustedList> {
     let tl = new TrustedList();
 
-    let tlVersion = this.getLatestVersion(dataTlList);
-    let certNames = this.getDistrustedCertList(tlVersion, dataDisCertList);
+    let tlVersion = await this.getLatestVersion(dataTlList);
+    let certNames = await this.getDistrustedCertList(tlVersion, dataDisCertList);
 
     if (skipFetch === false)
       process.stdout.write("Fetching certificates");
@@ -81,7 +81,7 @@ export class Apple {
         process.stdout.write(".");
 
       if (skipFetch === false)
-        certRaw = this.getDistrustedCert(tlVersion, certName);
+        certRaw = await this.getDistrustedCert(tlVersion, certName);
       let tl_cert: X509Certificate = {
         raw: certRaw,
         trust: ["ANY"],
@@ -99,10 +99,10 @@ export class Apple {
     return tl;
   }
 
-  getLatestVersion(data: string = ""): string {
+  async getLatestVersion(data: string = ""): Promise<string> {
     if (!data) {
-      let res = request("GET", this.url, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
-      data = res.body.toString();
+      const res = await fetch(this.url, { "method": "GET", timeout: this.timeout, "headers": { "user-agent": "node-fetch (nodejs)" } });
+      data = await res.text();
     }
     let ch = cheerio.load(data);
     let verStr: string = "";
@@ -128,11 +128,11 @@ export class Apple {
     return verStr;
   }
 
-  getTrustedCertList(version: string, data: string = ""): string[] {
+  async getTrustedCertList(version: string, data: string = ""): Promise<string[]> {
     if (!data) {
-      let url = this.url + "security_certificates-" + version + "/certificates/roots/";
-      let res = request("GET", url, { "timeout": this.timeout, "retry": true, "headers": { "user-agent": "nodejs" } });
-      data = res.body.toString();
+      const url = this.url + "security_certificates-" + version + "/certificates/roots/";
+      const res = await fetch(url, { method: "GET", timeout: this.timeout, headers: { "user-agent": "node-fetch (nodejs)" } });
+      data = await res.text();
     }
     let ch = cheerio.load(data);
     let filenames: string[] = [];
@@ -148,11 +148,11 @@ export class Apple {
     return filenames;
   }
 
-  getDistrustedCertList(version: string, data: string = ""): string[] {
+  async getDistrustedCertList(version: string, data: string = ""): Promise<string[]> {
     if (!data) {
-      let url = this.url + "security_certificates-" + version + "/certificates/distrusted/";
-      let res = request("GET", url, { "timeout": this.timeout, "retry": true, "headers": { "user-agent": "nodejs" } });
-      data = res.body.toString();
+      const url = this.url + "security_certificates-" + version + "/certificates/distrusted/";
+      const res = await fetch(url, { method: "GET", timeout: this.timeout, headers: { "user-agent": "node-fetch (nodejs)" } });
+      data = await res.text();
     }
     let ch = cheerio.load(data);
     let filenames: string[] = [];
@@ -168,11 +168,11 @@ export class Apple {
     return filenames;
   }
 
-  getEVOIDList(version: string, data: string = ""): IEVOID {
+  async getEVOIDList(version: string, data: string = ""): Promise<IEVOID> {
     if (!data) {
-      let url = this.url + "security_certificates-" + version + "/certificates/evroot.config?txt";
-      let res = request("GET", url, { "timeout": this.timeout, "retry": true, "headers": { "user-agent": "nodejs" } });
-      data = res.body.toString();
+      const url = this.url + "security_certificates-" + version + "/certificates/evroot.config?txt";
+      const res = await fetch(url, { method: "GET", timeout: this.timeout, headers: { "user-agent": "node-fetch (nodejs)" } });
+      data = await res.text();
     }
     let evRoots: IEVOID = {};
 
@@ -191,16 +191,16 @@ export class Apple {
     return evRoots;
   }
 
-  getTrustedCert(version: string, filename: string): string {
-    let url = this.url + "security_certificates-" + version + "/certificates/roots/" + filename;
-    let res = request("GET", url, { "timeout": this.timeout, "retry": true, "headers": { "user-agent": "nodejs" } });
-    return res.body.toString("base64");
+  async getTrustedCert(version: string, filename: string): Promise<string> {
+    const url = this.url + "security_certificates-" + version + "/certificates/roots/" + filename;
+    const res = await fetch(url, { method: "GET", timeout: this.timeout, headers: { "user-agent": "node-fetch (nodejs)" } });
+    return Buffer.from(await res.arrayBuffer()).toString("base64");
   }
 
-  getDistrustedCert(version: string, filename: string): string {
-    let url = this.url + "security_certificates-" + version + "/certificates/distrusted/" + filename;
-    let res = request("GET", url, { "timeout": this.timeout, "retry": true, "headers": { "user-agent": "nodejs" } });
-    return res.body.toString("base64");
+  async getDistrustedCert(version: string, filename: string): Promise<string> {
+    const url = this.url + "security_certificates-" + version + "/certificates/distrusted/" + filename;
+    const res = await fetch(url, { method: "GET", timeout: this.timeout, headers: { "user-agent": "node-fetch (nodejs)" } });
+    return Buffer.from(await res.arrayBuffer()).toString("base64");
   }
 
   splitLine(line: string): string[] {

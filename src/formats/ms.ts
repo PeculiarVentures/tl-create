@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as pvutils from "pvutils";
 import * as temp from "temp";
-import request from "sync-request";
+import fetch from "node-fetch";
 const asn1js = require("asn1js");
 import { TrustedList, X509Certificate } from "../tl";
 
@@ -155,13 +155,22 @@ const microsoftDisallowedURL = "http://www.download.windowsupdate.com/msdownload
 const microsoftDisallowedFilename = "disallowedcert.stl";
 
 export class Microsoft {
+  public static TIMEOUT = 1e4;
 
-  getTrusted(data?: string, skipFetch = false): TrustedList {
+  public timeout: number;
+
+  constructor({
+    timeout = Microsoft.TIMEOUT,
+  } = {}) {
+    this.timeout = timeout;
+  }
+
+  async getTrusted(data?: string, skipFetch = false): Promise<TrustedList> {
     let tl = new TrustedList();
     let databuf: Buffer;
 
     if (!data)
-      databuf = this.fetchSTL(microsoftTrustedURL, microsoftTrustedFilename);
+      databuf = await this.fetchSTL(microsoftTrustedURL, microsoftTrustedFilename);
     else
       databuf = Buffer.from(data, "binary");
 
@@ -186,7 +195,7 @@ export class Microsoft {
 
       let certraw = "";
       if (!skipFetch)
-        certraw = this.fetchcert(certid);
+        certraw = await this.fetchcert(certid);
       let tl_cert: X509Certificate = {
         raw: certraw,
         trust: [],
@@ -230,12 +239,12 @@ export class Microsoft {
     return tl;
   }
 
-  getDisallowed(data?: string, skipFetch = false): TrustedList {
+  async getDisallowed(data?: string, skipFetch = false): Promise<TrustedList> {
     let tl = new TrustedList();
     let databuf: Buffer;
 
     if (!data)
-      databuf = this.fetchSTL(microsoftDisallowedURL, microsoftDisallowedFilename);
+      databuf = await this.fetchSTL(microsoftDisallowedURL, microsoftDisallowedFilename);
     else
       databuf = Buffer.from(data, "binary");
 
@@ -261,7 +270,7 @@ export class Microsoft {
 
       let certraw = "";
       if (!skipFetch)
-        certraw = this.fetchcert(certid);
+        certraw = await this.fetchcert(certid);
       let tl_cert: X509Certificate = {
         raw: certraw,
         trust: [],
@@ -277,17 +286,17 @@ export class Microsoft {
     return tl;
   }
 
-  fetchcert(certid: string): string {
-    let url = "http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/" + certid + ".crt";
-    let res = request("GET", url, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
-    return res.body.toString("base64");
+  async fetchcert(certid: string): Promise<string> {
+    const url = "http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/" + certid + ".crt";
+    const res = await fetch(url, { method: "GET", timeout: this.timeout, headers: { "user-agent": "node-fetch (nodejs)" } });
+    return Buffer.from(await res.arrayBuffer()).toString("base64");
   }
 
-  fetchSTL(uri: string, filename: string): Buffer {
-    let res = request("GET", uri, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
+  async fetchSTL(uri: string, filename: string): Promise<Buffer> {
+    const res = await fetch(uri, { method: "GET", timeout: this.timeout, headers: { "user-agent": "node-fetch (nodejs)" } });
 
     let dirpath = temp.mkdirSync("authrootstl");
-    fs.writeFileSync(path.join(dirpath, filename + ".cab"), res.body);
+    fs.writeFileSync(path.join(dirpath, filename + ".cab"), Buffer.from(await res.arrayBuffer()));
 
     if (process.platform === "win32")
       child_process.execSync("expand " + filename + ".cab .", { cwd: dirpath });

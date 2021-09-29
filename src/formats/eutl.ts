@@ -1,11 +1,11 @@
 import * as XmlCore from "xml-core";
 import * as XmlDSigJs from "xmldsigjs";
 import * as XAdES from "xadesjs";
-import request from "sync-request";
+import fetch from "node-fetch";
 import { TrustedList } from "../tl";
 import { crypto } from "../crypto";
 
-XAdES.Application.setEngine("@peculiar/webcrypto", crypto);
+XAdES.Application.setEngine("@peculiar/webcrypto", crypto as Crypto);
 
 export interface EUTLParameters {
   url?: string;
@@ -38,7 +38,7 @@ export class EUTL {
     return eutl;
   }
 
-  fetchAllTSLs(): void {
+  async fetchAllTSLs(): Promise<void> {
     let toProcess: string[] = [this.url];
     let processed: string[] = [];
 
@@ -48,18 +48,18 @@ export class EUTL {
       let url = toProcess.pop()!;
       processed.push(url);
 
-      let res: any;
-      let tlsBody: any;
+      let tlsBody: string;
 
       try {
-        res = request("GET", url, { "timeout": this.timeout, "retry": true, "headers": { "user-agent": "nodejs" } });
-        tlsBody = res.getBody("utf8");
+        const res = await fetch(url, { method: "GET", timeout: this.timeout, headers: { "user-agent": "node-fetch (nodejs)" } });
+        tlsBody = await res.text();
       }
       catch (ex) {
+        console.error(`exception while fetching the ${url}`, ex);
         continue;
       }
 
-      let eutl = this.loadTSL(tlsBody);
+      const eutl = this.loadTSL(tlsBody);
 
       this.TrustServiceStatusLists.push(eutl);
 
@@ -71,11 +71,11 @@ export class EUTL {
     }
   }
 
-  getTrusted(data?: string): TrustedList {
+  async getTrusted(data?: string): Promise<TrustedList> {
     if (data) {
       this.TrustServiceStatusLists = [this.loadTSL(data)];
     } else {
-      this.fetchAllTSLs();
+      await this.fetchAllTSLs();
     }
 
     let tl = new TrustedList();
