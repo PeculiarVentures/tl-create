@@ -1,5 +1,5 @@
 import * as XmlCore from "xml-core";
-import request from "sync-request";
+import fetch from "node-fetch";
 import { TrustedList, X509Certificate } from "../tl";
 
 const MozillaAttributes = {
@@ -87,23 +87,22 @@ export class Mozilla {
     this.codeFilterList = codeFilter;
   }
 
-  public getTrusted(data?: string): TrustedList {
+  public getTrusted(data?: string): Promise<TrustedList> {
     return this.getByTrustValue(data, MozillaAttributes.CKT_NSS_TRUSTED_DELEGATOR);
   }
 
-  public getDisallowed(data?: string): TrustedList {
+  public getDisallowed(data?: string): Promise<TrustedList> {
     return this.getByTrustValue(data, MozillaAttributes.CKT_NSS_NOT_TRUSTED);
   }
 
-  public getByTrustValue(data?: string, trustVal?: string): TrustedList {
-    // console.log("parsing started "+ this.codeFilterList);
+  public async getByTrustValue(data?: string, trustVal?: string): Promise<TrustedList> {
     let tl = new TrustedList();
 
     if (data) {
       this.certText = data.replace(/\r\n/g, "\n").split("\n");
     } else {
-      let res = request("GET", this.url, { "timeout": this.timeout, "retry": true, "headers": { "user-agent": "nodejs" } });
-      this.certText = res.body.toString().replace(/\r\n/g, "\n").split("\n");
+      const res = await fetch(this.url, { method: "GET", timeout: this.timeout, headers: { "user-agent": "node-fetch (nodejs)" } });
+      this.certText = (await res.text()).replace(/\r\n/g, "\n").split("\n");
     }
     this.findObjectDefinitionsSegment();
     this.findTrustSegment();
@@ -126,9 +125,7 @@ export class Mozilla {
       this.findClassSegment();
     }
 
-    let c = 0;
     for (let cert of certs) {
-      // console.log(++c, cert[MozillaAttributes.CKA_LABEL]);
       let tl_cert: X509Certificate = {
         raw: cert[MozillaAttributes.CKA_VALUE],
         trust: [],
@@ -143,7 +140,6 @@ export class Mozilla {
         if (m && m[1] !== "STEP_UP_APPROVED" && ncc[i] === trustVal)
           tl_cert.trust?.push(m[1]);
       }
-      // console.log(tl_cert);
       tl.AddCertificate(tl_cert);
     }
     tl.filter(this.emptyTrustFilter);

@@ -1,6 +1,6 @@
 import * as pvutils from "pvutils";
-import request from "sync-request";
 import { TrustedList } from "../tl";
+import fetch from "node-fetch";
 import {asn1js, pkijs} from "../crypto";
 
 export interface CiscoParameters {
@@ -44,15 +44,13 @@ export class Cisco {
     }
   }
 
-  getTrusted(data?: string): TrustedList {
+  async getTrusted(data?: string): Promise<TrustedList> {
     let tl = new TrustedList();
     let dataBuf: ArrayBuffer;
 
     if (!data) {
-      let res = request("GET", this.fetchurl, { "timeout": this.timeout, "retry": true, "headers": { "user-agent": "nodejs" } });
-      dataBuf = Buffer.isBuffer(res.body)
-        ? new Uint8Array(res.body).buffer
-        : new Uint8Array(Buffer.from(res.body)).buffer;
+      const res = await fetch(this.fetchurl, { method: "GET", timeout: this.timeout, headers: { "user-agent": "node-fetch (nodejs)" } });
+      dataBuf = await res.arrayBuffer();
     } else {
       dataBuf = pvutils.stringToArrayBuffer(data);
     }

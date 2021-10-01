@@ -27,21 +27,21 @@ describe("EUTL format", () => {
     assert.strictEqual(v, true, "Wrong signature");
   });
 
-  it("EU EUTL parse", () => {
+  it("EU EUTL parse", async () => {
     // get static file
     let eutlText = fs.readFileSync("./test/static/eutl.xml", "utf8");
 
     let eutl = new tl_create.EUTL();
-    let tl = eutl.getTrusted(eutlText);
+    let tl = await eutl.getTrusted(eutlText);
     assert.strictEqual(tl.Certificates.length, 0);
   });
 
-  it("Member-state EUTL parse", () => {
+  it("Member-state EUTL parse", async() => {
     // get static file
     let eutlText = fs.readFileSync("./test/static/EL-TSL.xml", "utf8");
 
     let eutl = new tl_create.EUTL();
-    let tl = eutl.getTrusted(eutlText);
+    let tl = await eutl.getTrusted(eutlText);
     assert.strictEqual(tl.Certificates.length, 23);
   });
 
