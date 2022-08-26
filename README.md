@@ -91,6 +91,18 @@ node src/bin/tl-create.js --mozilla --format pem roots.pem
 node src/bin/tl-create.js --apple --format pem roots.pem
 ```
 
+### Extract all AATL Roots
+```
+node src/bin/tl-create.js --aatl --format pem roots.pem
+```
+
+#### Valid AATL trust purposes 
+```
+  ROOT
+  CERTIFIED_DOCUMENTS
+  DYNAMIC_CONTENT
+  JAVASCRIPT
+```
 
 ### Extract all EUTL Roots
 ```
@@ -105,7 +117,7 @@ node src/bin/tl-create.js --mozilla --microsoft --for "SERVER_AUTH" --format pem
 
 **NOTE**: The default is ALL purposes 
 
-### Available ouptut formats 
+### Available output formats 
 ```
 js
 pkijs
@@ -115,7 +127,7 @@ files
 
 The "files" format is intended to store all certificates in separate files under specific directory. For example if a certificate exists in Mozilla Trust List and has "SubjectKeyIdentifier" equal to "ABABABABABABABBB" the certificate content would be stored under "mozilla/ABABABABABABABBB". So, for Mozilla Trust List root directory would be "mozilla", for Microsoft - "microsoft", for Apple - "apple", for Cisco - "cisco".
 
-**NOTE**: Default ouput format is 'js'
+**NOTE**: Default output format is 'js'
 
 ## Install
 
@@ -130,7 +142,6 @@ npm install -g
 Please report bugs either as pull requests or as issues in the issue tracker. tl-create has a full disclosure vulnerability policy. Please do NOT attempt to report any security vulnerability in this code privately to anybody.
 
 ## TODO
-* Add the [Adobe Root Program](http://trustlist.adobe.com/tl12.acrobatsecuritysettings)
 * Add the [Oracle Root Program](http://www.oracle.com/technetwork/java/javase/javasecarootcertsprogram-1876540.html)
 
 ## Related

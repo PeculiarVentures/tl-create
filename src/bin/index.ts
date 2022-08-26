@@ -187,10 +187,8 @@ function parseCiscoDisallowed(): tl_create.TrustedList {
 
 async function parseAATLTrusted() {
   console.log("Trust Lists: AATL");
-  let adobe = new tl_create.AATL();
-  let tl = await adobe.getTrusted();
-
-  console.log("verification skipped");
+  const adobe = new tl_create.AATL();
+  const tl = await adobe.getTrusted();
 
   return tl;
 }
@@ -348,15 +346,14 @@ async function main() {
       console.log("Output format: PEM");
       fs.writeFileSync(outputFile, tl.toString(), { flag: "w+" });
       break;
-    case "files":
-      {
+    case "files": {
         const crypto = pkijs.getCrypto();
         if (typeof crypto === "undefined") {
           console.log("Unable to initialize cryptographic engine");
           break;
         }
 
-        let filesJSON: any = {};
+        let filesJSON: Record<string, Record<string, string>[]> = {};
 
         function storeFiles(directory: string, trustList: tl_create.TrustedList) {
           let targetDir = `./roots/${directory}`;
@@ -451,29 +448,29 @@ async function main() {
 
             fs.writeFileSync("./roots/index.json", Buffer.from(JSON.stringify(filesJSON)));
           }
-
-          if (!fs.existsSync("./roots"))
-            fs.mkdirSync("./roots");
-
-          if (mozTL)
-            storeFiles("mozilla", mozTL);
-
-          if (eutlTL)
-            storeFiles("eutl", eutlTL);
-
-          if (msTL)
-            storeFiles("microsoft", msTL);
-
-          if (appleTL)
-            storeFiles("apple", appleTL);
-
-          if (ciscoTL!)
-            storeFiles("cisco", ciscoTL!);
-
-          if (adobeTL!)
-            storeFiles("aatl", adobeTL!);
-
         }
+
+        if (!fs.existsSync("./roots"))
+          fs.mkdirSync("./roots");
+
+        if (mozTL!)
+          storeFiles("mozilla", mozTL);
+
+        if (eutlTL!)
+          storeFiles("eutl", eutlTL);
+
+        if (msTL!)
+          storeFiles("microsoft", msTL);
+
+        if (appleTL!)
+          storeFiles("apple", appleTL);
+
+        if (ciscoTL!)
+          storeFiles("cisco", ciscoTL!);
+
+        if (adobeTL!)
+          storeFiles("aatl", adobeTL!);
+
         break;
       }
     default:
@@ -483,11 +480,8 @@ async function main() {
 }
 
 main()
-  .then(() => {
-    console.log('done');
-    process.exit(0);
-  })
+  .then(() => process.exit(0))
   .catch((error) => {
-    console.error('fail', error);
+    console.error("Failed with error:", error);
     process.exit(1);
   });

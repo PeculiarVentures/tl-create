@@ -1,18 +1,23 @@
-// @ts-ignore
-import * as Path from "path";
 import * as PDFjs from "pdfjs-dist/legacy/build/pdf.js";
 import * as XmlCore from "xml-core";
 import * as XAdES from "xadesjs";
-import { crypto } from "../crypto";
+
 import { TrustedList } from "../tl";
 
-const fileURL = Path.join(__dirname, "../../../test/static/tl12.acrobatsecuritysettings.pdf");
-
+// TODO: Add signature check
 export class AATL {
-  async extractFile() {
-    const doc = await PDFjs.getDocument(fileURL).promise;
+  public static URL = "https://trustlist.adobe.com/tl12.acrobatsecuritysettings";
 
-    const attachments = await (doc as any).getAttachments();
+  protected url: string;
+
+  constructor({ url = AATL.URL } = {}) {
+    this.url = url;
+  }
+
+  async extractFile() {
+    const doc = await PDFjs.getDocument(this.url).promise;
+
+    const attachments = await doc.getAttachments();
     const attachmentName = "SecuritySettings.xml";
     const attachment = attachments[attachmentName];
 
@@ -35,16 +40,88 @@ export class AATL {
     }
 
     const parsed = XAdES.Parse(data);
-    const settings = SecuritySettings.LoadXml(parsed.lastChild as any);
+
+    if (!(XmlCore.isElement(parsed.lastChild))) {
+      throw new Error("AATL: Invalid XML structure");
+    }
+
+    const settings = SecuritySettings.LoadXml(parsed.lastChild);
+
+    let tl = new TrustedList();
+
+    const trustItems: (keyof (typeof XmlSecuritySettings.TrustTypeMapping))[] = [
+      "ROOT",
+      "CERTIFIED_DOCUMENTS",
+      "DYNAMIC_CONTENT",
+      "JAVASCRIPT",
+    ];
+
+    for (const identity of settings.TrustedIdentities!.GetIterator()) {
+      if (identity.Trust === null || identity.Certificate === null) {
+        continue;
+      }
+
+      // if someway xml will contain non-AATL sourced items, skip them
+      if (identity.Identification!.Source !== "AATL") {
+        continue;
+      }
+
+      const trust = [];
+
+      for (const trustName of trustItems) {
+        const localName = XmlSecuritySettings.TrustTypeMapping[trustName];
+
+        if (identity.Trust[localName] === true) {
+          trust.push(trustName);
+        }
+      }
+
+      const policyArray = identity.PolicyRestrictions?.CertificatePolicies?.GetIterator() || [];
+      const evpolicy = policyArray.map(oid => oid.Value!);
+
+      tl.AddCertificate({
+        trust,
+        evpolicy,
+        raw: identity.Certificate,
+        source: "AATL"
+      });
+    }
+
+    return tl;
+  }
+
+  async getDisallowed(data?: string) {
+    if (!data) {
+      data = await this.extractFile();
+    }
+
+    const parsed = XAdES.Parse(data);
+
+    if (!(XmlCore.isElement(parsed.lastChild))) {
+      throw new Error("AATL: Invalid XML structure");
+    }
+
+    const settings = SecuritySettings.LoadXml(parsed.lastChild);
 
     let tl = new TrustedList();
 
     for (const identity of settings.TrustedIdentities!.GetIterator()) {
+      if (identity.ImportAction !== 3) {
+        continue;
+      }
+
+      // if someway xml will contain non-AATL sourced items, skip them
+      if (identity.Identification!.Source !== "AATL") {
+        continue;
+      }
+
+      const evpolicy = identity.PolicyRestrictions?.CertificatePolicies?.GetIterator().map((oid) => oid.Value!) || [];
+
       tl.AddCertificate({
+        trust: [],
+        evpolicy,
         raw: identity.Certificate!,
-        trust: [identity.Trust!.Root ? "ALL" : "NONE"], // TODO: actualize
-        source: identity.Identification!.Source!, // will bee AATL
-        evpolicy: identity.PolicyRestrictions?.CertificatePolicies?.GetIterator().map((oid) => oid.Value!) || [],
+        source: "AATL"
       });
     }
 
@@ -52,6 +129,7 @@ export class AATL {
   }
 }
 
+// region XML parsing
 const XmlSecuritySettings = {
   ElementNames: {
     SecuritySettings: "SecuritySettings",
@@ -80,6 +158,12 @@ const XmlSecuritySettings = {
     Source: "Source",
     Visible: "Visible",
   },
+  TrustTypeMapping: {
+    ROOT: "Root",
+    CERTIFIED_DOCUMENTS: "CertifiedDocuments",
+    DYNAMIC_CONTENT: "DynamicContent",
+    JAVASCRIPT: "JavaScript",
+  } as const
 };
 
 @XmlCore.XmlElement({ localName: XmlSecuritySettings.ElementNames.SystemOperations })
@@ -129,7 +213,25 @@ function uniqueFlag(name: string) {
   return XmlCore.XmlChildElement({
     localName: name,
     maxOccurs: 1,
-    converter: XmlCore.XmlBooleanConverter,
+    converter: {
+      get: (value) => {
+        if (value) {
+          return "1";
+        }
+        return "0";
+      },
+      set: (value) => {
+        switch (value) {
+          case "1":
+            return true;
+          case "0":
+            return false;
+          default:
+            console.warn(`AATL: WARNING, invalid value for binary flag ${name}: "${value}"`);
+            return false;
+        }
+      },
+    }
   });
 }
 
@@ -140,7 +242,7 @@ class OID extends XmlCore.XmlObject {
 }
 
 @XmlCore.XmlElement({ localName: XmlSecuritySettings.ElementNames.CertificatePolicies, parser: OID })
-class CertificatePolicies extends XmlCore.XmlCollection<OID> {}
+class CertificatePolicies extends XmlCore.XmlCollection<OID> { }
 
 @XmlCore.XmlElement({ localName: XmlSecuritySettings.ElementNames.PolicyRestrictions })
 class PolicyRestrictions extends XmlCore.XmlObject {
@@ -201,7 +303,7 @@ class Identity extends XmlCore.XmlObject {
 }
 
 @XmlCore.XmlElement({ localName: XmlSecuritySettings.ElementNames.TrustedIdentities, parser: Identity })
-class TrustedIdentities extends XmlCore.XmlCollection<Identity> {}
+class TrustedIdentities extends XmlCore.XmlCollection<Identity> { }
 
 @XmlCore.XmlElement({ localName: XmlSecuritySettings.ElementNames.SecuritySettings })
 class SecuritySettings extends XmlCore.XmlObject {
@@ -212,13 +314,4 @@ class SecuritySettings extends XmlCore.XmlObject {
   public TrustedIdentities: TrustedIdentities | null = null;
 }
 
-// const AATL = new AdobeTL();
-
-// AATL
-//   .extractFile()
-//   .then(xml => AATL.getTrusted(xml))
-//   .then(res => console.log(res))
-//   .catch((err) => {
-//     console.log(err);
-//     process.exit(1);
-//   });
+// endregion XML parsing
