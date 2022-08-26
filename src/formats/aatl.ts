@@ -82,6 +82,8 @@ export class AATL {
       tl.AddCertificate({
         trust,
         evpolicy,
+        // TODO: Add operator detection if reasonable
+        operator: "Unknown",
         raw: identity.Certificate,
         source: "AATL"
       });
