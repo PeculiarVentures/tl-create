@@ -48,6 +48,7 @@ program
   .option("-s, --microsoft", "Microsoft Trust List Parse")
   .option("-a, --apple", "Apple Trust List Parse")
   .option("-c, --cisco", "Cisco Trust List Parse")
+  .option("-A, --aatl", "Adobe Trust List Parse")
   .option("-C, --ciscotype [type]", "Select Cisco Trusted Root Store (external/union/core)", "external")
   .option("-f, --for [type]", "Add the specified type for parse", "ALL")
   .option("-o, --format [format]", "Add the specified type for output format", "pem")
@@ -65,6 +66,7 @@ program.on("--help", () => {
   console.log("    $ tl-create --microsoft --disallowed --format pem disallowedroots.pem");
   console.log("    $ tl-create --apple --format pem roots.pem");
   console.log("    $ tl-create --cisco --ciscotype core --format pem roots.pem");
+  console.log("    $ tl-create --aatl --format pem roots.pem");
   console.log("");
 });
 
@@ -183,7 +185,19 @@ function parseCiscoDisallowed(): tl_create.TrustedList {
   throw new Error("Cisco does not support disallowed certificates.");
 }
 
-function jsonToPKIJS(json: any) {
+async function parseAATLTrusted() {
+  console.log("Trust Lists: AATL");
+  const adobe = new tl_create.AATL();
+  const tl = await adobe.getTrusted();
+
+  return tl;
+}
+
+function parseAATLDisallowed(): never {
+  throw new Error("AATL temporary does not support disallowed certificates.");
+}
+
+function jsonToPKIJS(json: tl_create.X509Certificate[]) {
   let _pkijs = [];
   for (let i in json) {
     let raw = json[i].raw;
@@ -218,227 +232,256 @@ if (!program.args.length) {
 console.log("Parsing started: " + getDateTime());
 let outputFile = program.args[0];
 
-let eutlTL, mozTL, msTL, appleTL, ciscoTL: tl_create.TrustedList;
+async function main() {
+  let eutlTL: tl_create.TrustedList | undefined;
+  let mozTL: tl_create.TrustedList | undefined;
+  let msTL: tl_create.TrustedList | undefined;
+  let appleTL: tl_create.TrustedList | undefined;
+  let adobeTL: tl_create.TrustedList | undefined;
+  let ciscoTL: tl_create.TrustedList | undefined;
 
-if (program.eutl) {
-  try {
-    if (!program.disallowed)
-      eutlTL = parseEUTLTrusted();
-    else
-      eutlTL = parseEUTLDisallowed();
-  } catch (e) {
-    if (e.stack)
-      console.log(e.toString(), e.stack);
-    else
+  if (program.eutl) {
+    try {
+      if (!program.disallowed)
+        eutlTL = parseEUTLTrusted();
+      else
+        eutlTL = parseEUTLDisallowed() as any;
+    } catch (e) {
+      if (e.stack)
+        console.log(e.toString(), e.stack);
+      else
+        console.log(e.toString());
+    }
+
+  }
+  if (program.mozilla) {
+    try {
+      if (!program.disallowed)
+        mozTL = parseMozillaTrusted();
+      else
+        mozTL = parseMozillaDisallowed();
+    } catch (e) {
       console.log(e.toString());
+    }
+  }
+  if (program.microsoft) {
+    try {
+      if (!program.disallowed)
+        msTL = parseMicrosoftTrusted();
+      else
+        msTL = parseMicrosoftDisallowed();
+    } catch (e) {
+      console.log(e.toString());
+    }
+  }
+  if (program.apple) {
+    try {
+      if (!program.disallowed)
+        appleTL = parseAppleTrusted();
+      else
+        appleTL = parseAppleDisallowed();
+    } catch (e) {
+      console.log(e.toString());
+    }
+  }
+  if (program.cisco) {
+    try {
+      if (!program.disallowed)
+        ciscoTL = parseCiscoTrusted(program.ciscotype);
+      else
+        ciscoTL = parseCiscoDisallowed();
+    } catch (e) {
+      console.log(e.toString());
+    }
+  }
+  if (program.aatl) {
+    try {
+      if (!program.disallowed)
+        adobeTL = await parseAATLTrusted();
+      else
+        adobeTL = parseAATLDisallowed();
+    } catch (e) {
+      console.log(e);
+    }
   }
 
-}
-if (program.mozilla) {
-  try {
-    if (!program.disallowed)
-      mozTL = parseMozillaTrusted();
-    else
-      mozTL = parseMozillaDisallowed();
-  } catch (e) {
-    console.log(e.toString());
+  let tl = new tl_create.TrustedList();
+  if (mozTL)
+    tl = mozTL.concat(tl);
+  if (eutlTL)
+    tl = eutlTL.concat(tl);
+  if (msTL)
+    tl = msTL.concat(tl);
+  if (appleTL)
+    tl = appleTL.concat(tl);
+  if (ciscoTL)
+    tl = ciscoTL.concat(tl);
+  if (adobeTL)
+    tl = adobeTL.concat(tl);
+
+  if (tl === null) {
+    console.log("Cannot fetch any Trust Lists.");
+    process.exit(1);
   }
-}
-if (program.microsoft) {
-  try {
-    if (!program.disallowed)
-      msTL = parseMicrosoftTrusted();
-    else
-      msTL = parseMicrosoftDisallowed();
-  } catch (e) {
-    console.log(e.toString());
+
+  // Filter data
+  if (filter.indexOf("ALL") === -1) {
+    console.log("Filter:");
+    console.log("    Incoming data: " + tl.Certificates.length + " certificates");
+    tl.filter(trustFilter);
+    console.log("    Filtered data: " + tl.Certificates.length + " certificates");
   }
-}
-if (program.apple) {
-  try {
-    if (!program.disallowed)
-      appleTL = parseAppleTrusted();
-    else
-      appleTL = parseAppleDisallowed();
-  } catch (e) {
-    console.log(e.toString());
-  }
-}
-if (program.cisco) {
-  try {
-    if (!program.disallowed)
-      ciscoTL = parseCiscoTrusted(program.ciscotype);
-    else
-      ciscoTL = parseCiscoDisallowed();
-  } catch (e) {
-    console.log(e.toString());
-  }
-}
 
-let tl = new tl_create.TrustedList();
-if (mozTL)
-  tl = mozTL.concat(tl);
-if (eutlTL)
-  tl = eutlTL.concat(tl);
-if (msTL)
-  tl = msTL.concat(tl);
-if (appleTL)
-  tl = appleTL.concat(tl);
-if (ciscoTL!)
-  tl = ciscoTL!.concat(tl);
+  switch ((program.format || "pem").toLowerCase()) {
+    case "js":
+      console.log("Output format: JS");
+      fs.writeFileSync(outputFile, JSON.stringify(tl), { flag: "w+" });
+      break;
+    case "pkijs":
+      console.log("Output format: PKIJS");
+      let _pkijs = jsonToPKIJS(tl.toJSON());
+      fs.writeFileSync(outputFile, JSON.stringify(_pkijs), { flag: "w+" });
+      break;
+    case "pem":
+      console.log("Output format: PEM");
+      fs.writeFileSync(outputFile, tl.toString(), { flag: "w+" });
+      break;
+    case "files": {
+        const crypto = pkijs.getCrypto();
+        if (typeof crypto === "undefined") {
+          console.log("Unable to initialize cryptographic engine");
+          break;
+        }
 
-if (tl === null) {
-  console.log("Cannot fetch any Trust Lists.");
-  process.exit(1);
-}
+        let filesJSON: Record<string, Record<string, string>[]> = {};
 
-// Filter data
-if (filter.indexOf("ALL") === -1) {
-  console.log("Filter:");
-  console.log("    Incoming data: " + tl.Certificates.length + " certificates");
-  tl.filter(trustFilter);
-  console.log("    Filtered data: " + tl.Certificates.length + " certificates");
-}
+        function storeFiles(directory: string, trustList: tl_create.TrustedList) {
+          let targetDir = `./roots/${directory}`;
 
-switch ((program.format || "pem").toLowerCase()) {
-  case "js":
-    console.log("Output format: JS");
-    fs.writeFileSync(outputFile, JSON.stringify(tl), { flag: "w+" });
-    break;
-  case "pkijs":
-    console.log("Output format: PKIJS");
-    let _pkijs = jsonToPKIJS(tl.toJSON());
-    fs.writeFileSync(outputFile, JSON.stringify(_pkijs), { flag: "w+" });
-    break;
-  case "pem":
-    console.log("Output format: PEM");
-    fs.writeFileSync(outputFile, tl.toString(), { flag: "w+" });
-    break;
-  case "files":
-    {
-      const crypto = pkijs.getCrypto();
-      if (typeof crypto === "undefined") {
-        console.log("Unable to initialize cryptographic engine");
-        break;
-      }
+          filesJSON[directory] = [];
 
-      let filesJSON: any = {};
+          let PKICertificate = pkijs.Certificate;
 
-      function storeFiles(directory: string, trustList: tl_create.TrustedList) {
-        let targetDir = `./roots/${directory}`;
+          let files = [];
+          let noIdFiles = [];
 
-        filesJSON[directory] = [];
+          for (let i = 0; i < trustList.Certificates.length; i++) {
+            let fileRaw = pvutils.stringToArrayBuffer(pvutils.fromBase64(trustList.Certificates[i].raw));
 
-        let PKICertificate = pkijs.Certificate;
+            let asn1 = asn1js.fromBER(fileRaw);
+            if (asn1.offset === (-1))
+              continue;
 
-        let files = [];
-        let noIdFiles = [];
+            let certificate;
 
-        for (let i = 0; i < trustList.Certificates.length; i++) {
-          let fileRaw = pvutils.stringToArrayBuffer(pvutils.fromBase64(trustList.Certificates[i].raw));
+            try {
+              certificate = new PKICertificate({ schema: asn1.result });
+            }
+            catch (ex) {
+              continue;
+            }
 
-          let asn1 = asn1js.fromBER(fileRaw);
-          if (asn1.offset === (-1))
-            continue;
+            // certificate.subject.valueBeforeDecode
+            let nameID = nodeCrypto.createHash("SHA1").update(Buffer.from(certificate.subject.valueBeforeDecode)).digest().toString("hex").toUpperCase();
 
-          let certificate;
+            if ("extensions" in certificate) {
+              for (let j = 0; j < certificate.extensions.length; j++) {
+                if (certificate.extensions[j].extnID === "2.5.29.14") {
+                  files.push({
+                    name: pvutils.bufferToHexCodes(certificate.extensions[j].parsedValue.valueBlock.valueHex),
+                    nameID: nameID,
+                    content: fileRaw.slice(0)
+                  });
 
-          try {
-            certificate = new PKICertificate({ schema: asn1.result });
-          }
-          catch (ex) {
-            continue;
-          }
+                  break;
+                }
 
-          // certificate.subject.valueBeforeDecode
-          let nameID = nodeCrypto.createHash("SHA1").update(Buffer.from(certificate.subject.valueBeforeDecode)).digest().toString("hex").toUpperCase();
-
-          if ("extensions" in certificate) {
-            for (let j = 0; j < certificate.extensions.length; j++) {
-              if (certificate.extensions[j].extnID === "2.5.29.14") {
-                files.push({
-                  name: pvutils.bufferToHexCodes(certificate.extensions[j].parsedValue.valueBlock.valueHex),
+                noIdFiles.push({
+                  publicKey: certificate.subjectPublicKeyInfo.subjectPublicKey.valueBlock.valueHex.slice(0),
                   nameID: nameID,
                   content: fileRaw.slice(0)
                 });
-
-                break;
               }
-
-              noIdFiles.push({
-                publicKey: certificate.subjectPublicKeyInfo.subjectPublicKey.valueBlock.valueHex.slice(0),
-                nameID: nameID,
-                content: fileRaw.slice(0)
-              });
             }
           }
-        }
 
-        if ((files.length) || (noIdFiles.length)) {
-          if (!fs.existsSync(targetDir))
-            fs.mkdirSync(targetDir);
-        }
+          if ((files.length) || (noIdFiles.length)) {
+            if (!fs.existsSync(targetDir))
+              fs.mkdirSync(targetDir);
+          }
 
-        if (files.length) {
-          for (let k = 0; k < files.length; k++) {
-            filesJSON[directory].push({
-              k: files[k].name,
-              n: files[k].nameID
-            });
-
-            // TODO: temporary workaround issue with mozilla cert
-            try {
-              fs.writeFileSync(targetDir + "/" + files[k].name, Buffer.from(files[k].content));
-
+          if (files.length) {
+            for (let k = 0; k < files.length; k++) {
               filesJSON[directory].push({
                 k: files[k].name,
                 n: files[k].nameID
               });
-            } catch (err) {
-              if (err.code !== "ENAMETOOLONG") {
-                throw err;
+
+              // TODO: temporary workaround issue with mozilla cert
+              try {
+                fs.writeFileSync(targetDir + "/" + files[k].name, Buffer.from(files[k].content));
+
+                filesJSON[directory].push({
+                  k: files[k].name,
+                  n: files[k].nameID
+                });
+              } catch (err) {
+                if (err.code !== "ENAMETOOLONG") {
+                  throw err;
+                }
+                console.log(err.message);
               }
-              console.log(err.message);
             }
+
+            if (noIdFiles.length) {
+              for (let m = 0; m < noIdFiles.length; m++) {
+                let keyID = nodeCrypto.createHash("SHA1").update(Buffer.from(noIdFiles[m].publicKey)).digest().toString("hex").toUpperCase();
+
+                filesJSON[directory].push({
+                  k: keyID,
+                  n: noIdFiles[m].nameID
+                });
+
+                fs.writeFileSync(targetDir + "/" + keyID, Buffer.from(noIdFiles[m].content));
+              }
+            }
+
+            fs.writeFileSync("./roots/index.json", Buffer.from(JSON.stringify(filesJSON)));
           }
         }
 
-        if (noIdFiles.length) {
-          for (let m = 0; m < noIdFiles.length; m++) {
-            let keyID = nodeCrypto.createHash("SHA1").update(Buffer.from(noIdFiles[m].publicKey)).digest().toString("hex").toUpperCase();
+        if (!fs.existsSync("./roots"))
+          fs.mkdirSync("./roots");
 
-            filesJSON[directory].push({
-              k: keyID,
-              n: noIdFiles[m].nameID
-            });
+        if (mozTL)
+          storeFiles("mozilla", mozTL);
 
-            fs.writeFileSync(targetDir + "/" + keyID, Buffer.from(noIdFiles[m].content));
-          }
-        }
+        if (eutlTL)
+          storeFiles("eutl", eutlTL);
 
-        fs.writeFileSync("./roots/index.json", Buffer.from(JSON.stringify(filesJSON)));
+        if (msTL)
+          storeFiles("microsoft", msTL);
+
+        if (appleTL)
+          storeFiles("apple", appleTL);
+
+        if (ciscoTL)
+          storeFiles("cisco", ciscoTL);
+
+        if (adobeTL)
+          storeFiles("aatl", adobeTL);
+
+        break;
       }
-
-      if (!fs.existsSync("./roots"))
-        fs.mkdirSync("./roots");
-
-      if (mozTL)
-        storeFiles("mozilla", mozTL);
-
-      if (eutlTL)
-        storeFiles("eutl", eutlTL);
-
-      if (msTL)
-        storeFiles("microsoft", msTL);
-
-      if (appleTL)
-        storeFiles("apple", appleTL);
-
-      if (ciscoTL!)
-        storeFiles("cisco", ciscoTL!);
-    }
-    break;
-  default:
-    console.log("Invalid output format");
-    break;
+    default:
+      console.log("Invalid output format");
+      break;
+  }
 }
+
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error("Failed with error:", error);
+    process.exit(1);
+  });
