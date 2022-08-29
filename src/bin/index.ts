@@ -197,7 +197,7 @@ function parseAATLDisallowed(): never {
   throw new Error("AATL temporary does not support disallowed certificates.");
 }
 
-function jsonToPKIJS(json: any) {
+function jsonToPKIJS(json: tl_create.X509Certificate[]) {
   let _pkijs = [];
   for (let i in json) {
     let raw = json[i].raw;
@@ -233,12 +233,12 @@ console.log("Parsing started: " + getDateTime());
 let outputFile = program.args[0];
 
 async function main() {
-  let eutlTL: tl_create.TrustedList,
-    mozTL: tl_create.TrustedList,
-    msTL: tl_create.TrustedList,
-    appleTL: tl_create.TrustedList,
-    adobeTL: tl_create.TrustedList,
-    ciscoTL: tl_create.TrustedList;
+  let eutlTL: tl_create.TrustedList | undefined;
+  let mozTL: tl_create.TrustedList | undefined;
+  let msTL: tl_create.TrustedList | undefined;
+  let appleTL: tl_create.TrustedList | undefined;
+  let adobeTL: tl_create.TrustedList | undefined;
+  let ciscoTL: tl_create.TrustedList | undefined;
 
   if (program.eutl) {
     try {
@@ -306,18 +306,18 @@ async function main() {
   }
 
   let tl = new tl_create.TrustedList();
-  if (mozTL!)
+  if (mozTL)
     tl = mozTL.concat(tl);
-  if (eutlTL!)
+  if (eutlTL)
     tl = eutlTL.concat(tl);
-  if (msTL!)
+  if (msTL)
     tl = msTL.concat(tl);
-  if (appleTL!)
+  if (appleTL)
     tl = appleTL.concat(tl);
-  if (ciscoTL!)
-    tl = ciscoTL!.concat(tl);
-  if (adobeTL!)
-    tl = adobeTL!.concat(tl);
+  if (ciscoTL)
+    tl = ciscoTL.concat(tl);
+  if (adobeTL)
+    tl = adobeTL.concat(tl);
 
   if (tl === null) {
     console.log("Cannot fetch any Trust Lists.");
@@ -453,23 +453,23 @@ async function main() {
         if (!fs.existsSync("./roots"))
           fs.mkdirSync("./roots");
 
-        if (mozTL!)
+        if (mozTL)
           storeFiles("mozilla", mozTL);
 
-        if (eutlTL!)
+        if (eutlTL)
           storeFiles("eutl", eutlTL);
 
-        if (msTL!)
+        if (msTL)
           storeFiles("microsoft", msTL);
 
-        if (appleTL!)
+        if (appleTL)
           storeFiles("apple", appleTL);
 
-        if (ciscoTL!)
-          storeFiles("cisco", ciscoTL!);
+        if (ciscoTL)
+          storeFiles("cisco", ciscoTL);
 
-        if (adobeTL!)
-          storeFiles("aatl", adobeTL!);
+        if (adobeTL)
+          storeFiles("aatl", adobeTL);
 
         break;
       }

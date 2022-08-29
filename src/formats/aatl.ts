@@ -113,7 +113,7 @@ export class AATL {
       }
 
       // if someway xml will contain non-AATL sourced items, skip them
-      if (identity.Identification!.Source !== "AATL") {
+      if (identity.Identification?.Source !== "AATL") {
         continue;
       }
 
