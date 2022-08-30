@@ -1,6 +1,6 @@
 {
   "name": "tl-create",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "main": "build/cjs/index.js",
   "module": "build/mjs/index.js",
   "types": "build/types/index.d.ts",
