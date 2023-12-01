@@ -41,7 +41,7 @@
     "temp": "^0.9.4",
     "tslib": "^2.1.0",
     "xadesjs": "^2.1.1",
-    "xml-core": "^1.1.2",
+    "xml-core": "^1.1.4",
     "xmldom": "^0.5.0",
     "xmldom-alpha": "^0.1.28",
     "xmldsigjs": "^2.1.3"
