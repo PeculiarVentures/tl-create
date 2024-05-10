@@ -34,7 +34,7 @@
     "asn1js": "^2.1.1",
     "cheerio": "^0.22.0",
     "commander": "^4.1.1",
-    "pdfjs-dist": "^2.15.349",
+    "pdfjs-dist": "^4.2.67",
     "pkijs": "^2.1.93",
     "pvutils": "^1.0.17",
     "sync-request": "^6.1.0",
