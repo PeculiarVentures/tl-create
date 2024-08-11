@@ -32,7 +32,7 @@
     "@peculiar/webcrypto": "^1.1.6",
     "@types/pdfjs-dist": "^2.1.4",
     "asn1js": "^2.1.1",
-    "cheerio": "^0.22.0",
+    "cheerio": "^1.0.0",
     "commander": "^4.1.1",
     "pdfjs-dist": "^2.15.349",
     "pkijs": "^2.1.93",
