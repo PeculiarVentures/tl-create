@@ -55,7 +55,7 @@ export class EUTL {
         res = request("GET", url, { "timeout": this.timeout, "retry": true, "headers": { "user-agent": "nodejs" } });
         tlsBody = res.getBody("utf8");
       }
-      catch (ex) {
+      catch (ex: any) {
         continue;
       }
 

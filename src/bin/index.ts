@@ -246,7 +246,7 @@ async function main() {
         eutlTL = parseEUTLTrusted();
       else
         eutlTL = parseEUTLDisallowed() as any;
-    } catch (e) {
+    } catch (e: any) {
       if (e.stack)
         console.log(e.toString(), e.stack);
       else
@@ -260,7 +260,7 @@ async function main() {
         mozTL = parseMozillaTrusted();
       else
         mozTL = parseMozillaDisallowed();
-    } catch (e) {
+    } catch (e: any) {
       console.log(e.toString());
     }
   }
@@ -270,7 +270,7 @@ async function main() {
         msTL = parseMicrosoftTrusted();
       else
         msTL = parseMicrosoftDisallowed();
-    } catch (e) {
+    } catch (e: any) {
       console.log(e.toString());
     }
   }
@@ -280,7 +280,7 @@ async function main() {
         appleTL = parseAppleTrusted();
       else
         appleTL = parseAppleDisallowed();
-    } catch (e) {
+    } catch (e: any) {
       console.log(e.toString());
     }
   }
@@ -290,7 +290,7 @@ async function main() {
         ciscoTL = parseCiscoTrusted(program.ciscotype);
       else
         ciscoTL = parseCiscoDisallowed();
-    } catch (e) {
+    } catch (e: any) {
       console.log(e.toString());
     }
   }
@@ -300,7 +300,7 @@ async function main() {
         adobeTL = await parseAATLTrusted();
       else
         adobeTL = parseAATLDisallowed();
-    } catch (e) {
+    } catch (e: any) {
       console.log(e);
     }
   }
@@ -377,7 +377,7 @@ async function main() {
             try {
               certificate = new PKICertificate({ schema: asn1.result });
             }
-            catch (ex) {
+            catch (ex: any) {
               continue;
             }
 
@@ -425,7 +425,7 @@ async function main() {
                   k: files[k].name,
                   n: files[k].nameID
                 });
-              } catch (err) {
+              } catch (err: any) {
                 if (err.code !== "ENAMETOOLONG") {
                   throw err;
                 }
