@@ -63,7 +63,7 @@ export interface MozillaParameters {
 }
 export class Mozilla {
 
-  public static URL = "https://hg.mozilla.org/mozilla-central/raw-file/tip/security/nss/lib/ckfw/builtins/certdata.txt";
+  public static URL = "https://hg.mozilla.org/projects/nss/raw-file/default/lib/ckfw/builtins/certdata.txt";
   public static TIMEOUT = 1e4;
 
   public url: string;
