@@ -49,13 +49,13 @@ export class EUTL {
       processed.push(url);
 
       let res: any;
-      let tlsBody: any;
+      let tlsBody: string;
 
       try {
         res = request("GET", url, { "timeout": this.timeout, "retry": true, "headers": { "user-agent": "nodejs" } });
         tlsBody = res.getBody("utf8");
       }
-      catch (ex: any) {
+      catch {
         continue;
       }
 
