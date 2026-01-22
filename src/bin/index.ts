@@ -384,6 +384,7 @@ async function main() {
             // certificate.subject.valueBeforeDecode
             let nameID = nodeCrypto.createHash("SHA1").update(Buffer.from(certificate.subject.valueBeforeDecode)).digest().toString("hex").toUpperCase();
 
+            let isFound = false;
             if ("extensions" in certificate) {
               for (let j = 0; j < certificate.extensions.length; j++) {
                 if (certificate.extensions[j].extnID === "2.5.29.14") {
@@ -392,16 +393,18 @@ async function main() {
                     nameID: nameID,
                     content: fileRaw.slice(0)
                   });
-
+                  isFound = true;
                   break;
                 }
-
-                noIdFiles.push({
-                  publicKey: certificate.subjectPublicKeyInfo.subjectPublicKey.valueBlock.valueHex.slice(0),
-                  nameID: nameID,
-                  content: fileRaw.slice(0)
-                });
               }
+            }
+
+            if (!isFound) {
+              noIdFiles.push({
+                publicKey: certificate.subjectPublicKeyInfo.subjectPublicKey.valueBlock.valueHex.slice(0),
+                nameID: nameID,
+                content: fileRaw.slice(0)
+              });
             }
           }
 
@@ -411,11 +414,13 @@ async function main() {
           }
 
           if (files.length) {
+            let seenFiles = new Set<string>();
+
             for (let k = 0; k < files.length; k++) {
-              filesJSON[directory].push({
-                k: files[k].name,
-                n: files[k].nameID
-              });
+              if (seenFiles.has(files[k].name)) {
+                continue;
+              }
+              seenFiles.add(files[k].name);
 
               // TODO: temporary workaround issue with mozilla cert
               try {
@@ -432,22 +437,29 @@ async function main() {
                 console.log(err.message);
               }
             }
-
-            if (noIdFiles.length) {
-              for (let m = 0; m < noIdFiles.length; m++) {
-                let keyID = nodeCrypto.createHash("SHA1").update(Buffer.from(noIdFiles[m].publicKey)).digest().toString("hex").toUpperCase();
-
-                filesJSON[directory].push({
-                  k: keyID,
-                  n: noIdFiles[m].nameID
-                });
-
-                fs.writeFileSync(targetDir + "/" + keyID, Buffer.from(noIdFiles[m].content));
-              }
-            }
-
-            fs.writeFileSync("./roots/index.json", Buffer.from(JSON.stringify(filesJSON)));
           }
+
+          if (noIdFiles.length) {
+            let seenFiles = new Set<string>();
+
+            for (let m = 0; m < noIdFiles.length; m++) {
+              let keyID = nodeCrypto.createHash("SHA1").update(Buffer.from(noIdFiles[m].publicKey)).digest().toString("hex").toUpperCase();
+
+              if (seenFiles.has(keyID)) {
+                continue;
+              }
+              seenFiles.add(keyID);
+
+              filesJSON[directory].push({
+                k: keyID,
+                n: noIdFiles[m].nameID
+              });
+
+              fs.writeFileSync(targetDir + "/" + keyID, Buffer.from(noIdFiles[m].content));
+            }
+          }
+
+          fs.writeFileSync("./roots/index.json", Buffer.from(JSON.stringify(filesJSON)));
         }
 
         if (!fs.existsSync("./roots"))
