@@ -2,7 +2,6 @@
 .vscode/
 .idea/
 node_modules/
-package-lock.json/
 build/
 coverage/
 .nyc_output/

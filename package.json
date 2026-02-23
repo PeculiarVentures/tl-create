@@ -29,7 +29,7 @@
   "author": "Asif ur rahman",
   "license": "MIT",
   "dependencies": {
-    "@peculiar/webcrypto": "^1.1.6",
+    "@peculiar/webcrypto": "^1.5.0",
     "@types/pdfjs-dist": "^2.1.4",
     "asn1js": "^2.1.1",
     "cheerio": "^0.22.0",
@@ -50,7 +50,7 @@
     "@types/asn1js": "^2.0.0",
     "@types/cheerio": "^0.22.28",
     "@types/mocha": "^8.2.2",
-    "@types/node": "^14.14.35",
+    "@types/node": "^22.0.0",
     "@types/pkijs": "^0.0.6",
     "@types/pvutils": "^1.0.0",
     "@types/temp": "^0.8.34",
@@ -59,7 +59,7 @@
     "nyc": "^15.1.0",
     "rimraf": "^3.0.2",
     "ts-node": "^9.1.1",
-    "typescript": "^4.2.3"
+    "typescript": "^5.5.0"
   },
   "repository": {
     "type": "git",
@@ -87,7 +87,10 @@
     ]
   },
   "mocha": {
-    "require": "ts-node/register",
+    "require": [
+      "ts-node/register",
+      "./test/setup.ts"
+    ],
     "extension": [
       "ts"
     ],
