@@ -55,7 +55,7 @@
     "@types/pvutils": "^1.0.0",
     "@types/temp": "^0.8.34",
     "@types/xmldom": "^0.1.30",
-    "mocha": "^8.3.2",
+    "mocha": "^11.3.0",
     "nyc": "^15.1.0",
     "rimraf": "^3.0.2",
     "ts-node": "^9.1.1",
