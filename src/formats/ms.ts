@@ -159,17 +159,7 @@ export class Microsoft {
     else
       databuf = Buffer.from(data, "binary");
 
-    let variant: any = { verified: false };
-    const arrayBuffer = databuf.buffer.slice(databuf.byteOffset, databuf.byteOffset + databuf.byteLength);
-    for (let i = 0; i < arrayBuffer.byteLength; i++) {
-      try {
-        variant = asn1js.verifySchema(arrayBuffer.slice(i), ctl_schema);
-        if (variant.verified === true)
-          break;
-      } catch (e) {
-        // Continue searching
-      }
-    }
+    let variant = this.findASN1Structure(databuf, ctl_schema);
 
     if (variant.verified === false)
       throw new Error("Cannot parse STL");
@@ -238,17 +228,7 @@ export class Microsoft {
     else
       databuf = Buffer.from(data, "binary");
 
-    let variant: any = { verified: false };
-    const arrayBuffer = databuf.buffer.slice(databuf.byteOffset, databuf.byteOffset + databuf.byteLength);
-    for (let i = 0; i < arrayBuffer.byteLength; i++) {
-      try {
-        variant = asn1js.verifySchema(arrayBuffer.slice(i), dis_ctl_schema);
-        if (variant.verified === true)
-          break;
-      } catch (e) {
-        // Continue searching
-      }
-    }
+    let variant = this.findASN1Structure(databuf, dis_ctl_schema);
 
     if (variant.verified === false)
       throw new Error("Cannot parse STL");
@@ -279,6 +259,21 @@ export class Microsoft {
       console.log();
 
     return tl;
+  }
+
+  private findASN1Structure(databuf: Buffer, schema: object): { verified: boolean; result?: any } {
+    let variant: { verified: boolean; result?: any } = { verified: false };
+    const arrayBuffer = databuf.buffer.slice(databuf.byteOffset, databuf.byteOffset + databuf.byteLength);
+    for (let i = 0; i < arrayBuffer.byteLength; i++) {
+      try {
+        variant = asn1js.verifySchema(arrayBuffer.slice(i), schema);
+        if (variant.verified === true)
+          break;
+      } catch (e: unknown) {
+        // Continue searching
+      }
+    }
+    return variant;
   }
 
   fetchcert(certid: string): string {
