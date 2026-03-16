@@ -55,7 +55,8 @@ export class EUTL {
         res = request("GET", url, { "timeout": this.timeout, "retry": true, "headers": { "user-agent": "nodejs" } });
         tlsBody = res.getBody("utf8");
       }
-      catch {
+      catch (e: any) {
+        process.stdout.write(`Error fetching TSL from ${url}: ${e.message}\n`);
         continue;
       }
 
@@ -65,7 +66,8 @@ export class EUTL {
 
       for (let pointer of eutl.SchemaInformation.Pointers) {
         if ((pointer.AdditionalInformation?.MimeType === "application/vnd.etsi.tsl+xml") &&
-          (processed.indexOf(pointer.Location!) === -1))
+          (processed.indexOf(pointer.Location!) === -1) &&
+          (toProcess.indexOf(pointer.Location!) === -1))
           toProcess.push(pointer.Location!);
       }
     }
@@ -297,7 +299,7 @@ class SchemeInformation extends XmlObject {
 
       // SchemeTerritory
       i = this.NextElementPos(value.childNodes, ++i, XmlTrustServiceStatusList.ElementNames.SchemeTerritory, XmlTrustServiceStatusList.NamespaceURI, true);
-      this.StatusDeterminationApproach = value.childNodes[i].textContent!;
+      this.SchemeTerritory = value.childNodes[i].textContent!;
 
       // PolicyOrLegalNotice
       i = this.NextElementPos(value.childNodes, ++i, XmlTrustServiceStatusList.ElementNames.PolicyOrLegalNotice, XmlTrustServiceStatusList.NamespaceURI, true);
@@ -432,7 +434,7 @@ class MultiLangType<T> extends XmlObject {
 
   GetItem(lang: string): T | null {
     for (let item of this.m_elements) {
-      if (item.lang = lang)
+      if (item.lang === lang)
         return item.item;
     }
     return null;
