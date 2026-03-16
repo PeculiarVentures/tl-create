@@ -48,15 +48,15 @@ export class EUTL {
       let url = toProcess.pop()!;
       processed.push(url);
 
-      let res: any;
       let tlsBody: string;
 
       try {
-        res = request("GET", url, { "timeout": this.timeout, "retry": true, "headers": { "user-agent": "nodejs" } });
+        const res = request("GET", url, { "timeout": this.timeout, "retry": true, "headers": { "user-agent": "nodejs" } });
         tlsBody = res.getBody("utf8");
       }
-      catch (e: any) {
-        process.stdout.write(`Error fetching TSL from ${url}: ${e.message}\n`);
+      catch (e: unknown) {
+        const message = (e instanceof Error) ? e.message : String(e);
+        console.log(`Error fetching TSL from ${url}: ${message}`);
         continue;
       }
 
