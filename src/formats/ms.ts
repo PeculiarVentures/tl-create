@@ -1,8 +1,4 @@
-import * as child_process from "child_process";
-import * as fs from "fs";
-import * as path from "path";
 import * as pvutils from "pvutils";
-import * as temp from "temp";
 import request from "sync-request";
 const asn1js = require("asn1js");
 import { TrustedList, X509Certificate } from "../tl";
@@ -149,10 +145,8 @@ const EKU_oids = {
   "1.3.6.1.4.1.311.10.3.4": "EFS_CRYPTO"
 };
 
-const microsoftTrustedURL = "http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab";
-const microsoftTrustedFilename = "authroot.stl";
-const microsoftDisallowedURL = "http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/disallowedcertstl.cab";
-const microsoftDisallowedFilename = "disallowedcert.stl";
+const microsoftTrustedURL = "http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authroot.stl";
+const microsoftDisallowedURL = "http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/disallowedcert.stl";
 
 export class Microsoft {
 
@@ -161,15 +155,20 @@ export class Microsoft {
     let databuf: Buffer;
 
     if (!data)
-      databuf = this.fetchSTL(microsoftTrustedURL, microsoftTrustedFilename);
+      databuf = this.fetchSTL(microsoftTrustedURL);
     else
       databuf = Buffer.from(data, "binary");
 
-    let variant: any;
-    for (let i = 0; i < databuf.buffer.byteLength; i++) {
-      variant = asn1js.verifySchema(databuf.buffer.slice(i), ctl_schema);
-      if (variant.verified === true)
-        break;
+    let variant: any = { verified: false };
+    const arrayBuffer = databuf.buffer.slice(databuf.byteOffset, databuf.byteOffset + databuf.byteLength);
+    for (let i = 0; i < arrayBuffer.byteLength; i++) {
+      try {
+        variant = asn1js.verifySchema(arrayBuffer.slice(i), ctl_schema);
+        if (variant.verified === true)
+          break;
+      } catch (e) {
+        // Continue searching
+      }
     }
 
     if (variant.verified === false)
@@ -235,15 +234,20 @@ export class Microsoft {
     let databuf: Buffer;
 
     if (!data)
-      databuf = this.fetchSTL(microsoftDisallowedURL, microsoftDisallowedFilename);
+      databuf = this.fetchSTL(microsoftDisallowedURL);
     else
       databuf = Buffer.from(data, "binary");
 
-    let variant: any;
-    for (let i = 0; i < databuf.buffer.byteLength; i++) {
-      variant = asn1js.verifySchema(databuf.buffer.slice(i), dis_ctl_schema);
-      if (variant.verified === true)
-        break;
+    let variant: any = { verified: false };
+    const arrayBuffer = databuf.buffer.slice(databuf.byteOffset, databuf.byteOffset + databuf.byteLength);
+    for (let i = 0; i < arrayBuffer.byteLength; i++) {
+      try {
+        variant = asn1js.verifySchema(arrayBuffer.slice(i), dis_ctl_schema);
+        if (variant.verified === true)
+          break;
+      } catch (e) {
+        // Continue searching
+      }
     }
 
     if (variant.verified === false)
@@ -283,25 +287,9 @@ export class Microsoft {
     return res.body.toString("base64");
   }
 
-  fetchSTL(uri: string, filename: string): Buffer {
+  fetchSTL(uri: string): Buffer {
     let res = request("GET", uri, { "timeout": 10000, "retry": true, "headers": { "user-agent": "nodejs" } });
-
-    let dirpath = temp.mkdirSync("authrootstl");
-    fs.writeFileSync(path.join(dirpath, filename + ".cab"), res.body);
-
-    if (process.platform === "win32")
-      child_process.execSync("expand " + filename + ".cab .", { cwd: dirpath });
-    else
-      child_process.execSync("cabextract " + filename + ".cab", { cwd: dirpath });
-
-    let data = fs.readFileSync(path.join(dirpath, filename));
-
-    fs.unlinkSync(path.join(dirpath, filename));
-    fs.unlinkSync(path.join(dirpath, filename + ".cab"));
-
-    temp.cleanupSync();
-
-    return data;
+    return Buffer.from(res.body);
   }
 
 }
