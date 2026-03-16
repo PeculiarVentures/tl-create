@@ -106,7 +106,7 @@ function parseEUTLTrusted() {
 
   Promise.all(eutl.TrustServiceStatusLists.map(function (list) { return list.CheckSignature(); }))
     .then(function (verify) {
-      if (!verify)
+      if (verify.some(v => !v))
         console.log("Warning!!!: EUTL signature is not valid");
       else
         console.log("Information: EUTL signature is valid");
@@ -319,7 +319,7 @@ async function main() {
   if (adobeTL)
     tl = adobeTL.concat(tl);
 
-  if (tl === null) {
+  if (!tl || !tl.Certificates.length) {
     console.log("Cannot fetch any Trust Lists.");
     process.exit(1);
   }
