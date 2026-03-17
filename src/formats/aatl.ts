@@ -1,4 +1,4 @@
-import * as PDFjs from "pdfjs-dist/legacy/build/pdf.js";
+import * as PDFjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import * as XmlCore from "xml-core";
 import * as XAdES from "xadesjs";
 
