@@ -1,6 +1,6 @@
 import * as pvutils from "pvutils";
 import request from "sync-request";
-const asn1js = require("asn1js");
+import { asn1js } from "../crypto";
 import { TrustedList, X509Certificate } from "../tl";
 
 const ctl_schema = new asn1js.Sequence({
@@ -166,11 +166,10 @@ export class Microsoft {
 
     if (!skipFetch)
       process.stdout.write("Fetching certificates");
-    for (let ctlentry of variant.result.CTLEntry) {
+    for (let ctlentry of (variant.result as any).CTLEntry) {
       if (!skipFetch)
         process.stdout.write(".");
-      let ctlentry_parsed = asn1js.verifySchema(ctlentry.toBER(), ctlentry_schema);
-
+      let ctlentry_parsed = asn1js.verifySchema(ctlentry.toBER(), ctlentry_schema) as any;
       let certid = pvutils.bufferToHexCodes(ctlentry_parsed.result.CertID.valueBlock.valueHex);
 
       let certraw = "";
@@ -189,7 +188,7 @@ export class Microsoft {
 
         // Load EKUs
         if (metadata_oid === "1.3.6.1.4.1.311.10.11.9") {
-          let ekus = asn1js.verifySchema(metadata.valueBlock.value[1].valueBlock.value[0].valueBlock.valueHex, eku_schema);
+          let ekus = asn1js.verifySchema(metadata.valueBlock.value[1].valueBlock.value[0].valueBlock.valueHex, eku_schema) as any;
           for (let eku of ekus.result.OID) {
             let eku_oid = eku.valueBlock.toString();
             if (eku_oid in EKU_oids)
@@ -204,7 +203,7 @@ export class Microsoft {
 
         // Load EV Policy OIDs
         if (metadata_oid === "1.3.6.1.4.1.311.10.11.83") {
-          let evoids = asn1js.verifySchema(metadata.valueBlock.value[1].valueBlock.value[0].valueBlock.valueHex, evoid_schema);
+          let evoids = asn1js.verifySchema(metadata.valueBlock.value[1].valueBlock.value[0].valueBlock.valueHex, evoid_schema) as any;
           for (let evoid of evoids.result.PolicyThing) {
             tl_cert.evpolicy?.push(evoid.valueBlock.value[0].valueBlock.toString());
           }
@@ -235,11 +234,11 @@ export class Microsoft {
 
     if (!skipFetch)
       process.stdout.write("Fetching certificates");
-    for (let ctlentry of variant.result.CTLEntry) {
+    for (let ctlentry of (variant.result as any).CTLEntry) {
       if (!skipFetch)
         process.stdout.write(".");
 
-      let ctlentry_parsed = asn1js.verifySchema(ctlentry.toBER(), dis_ctlentry_schema);
+      let ctlentry_parsed = asn1js.verifySchema(ctlentry.toBER(), dis_ctlentry_schema) as any;
 
       let certid = pvutils.bufferToHexCodes(ctlentry_parsed.result.CertID.valueBlock.valueHex);
 
@@ -266,7 +265,7 @@ export class Microsoft {
     const arrayBuffer = databuf.buffer.slice(databuf.byteOffset, databuf.byteOffset + databuf.byteLength);
     for (let i = 0; i < arrayBuffer.byteLength; i++) {
       try {
-        variant = asn1js.verifySchema(arrayBuffer.slice(i), schema);
+        variant = asn1js.verifySchema(arrayBuffer.slice(i) as any, schema as any);
         if (variant.verified === true)
           break;
       } catch (e: unknown) {

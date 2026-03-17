@@ -1,8 +1,6 @@
 import * as assert from "assert";
 import * as fs from "fs";
-// TODO: fix ignore below
-// @ts-ignore - no "build" dir @types for this package, but src contains disallowed import
-import Certificate from "pkijs/build/Certificate";
+import { Certificate } from "pkijs";
 import * as pvutils from "pvutils";
 import * as asn1js from "asn1js";
 import * as tl_create from "../src";

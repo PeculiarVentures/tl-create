@@ -1,6 +1,8 @@
-export const asn1js = require("asn1js");
-export const pkijs = require("pkijs");
+import * as asn1js from "asn1js";
+import * as pkijs from "pkijs";
 import { Crypto } from "@peculiar/webcrypto";
+
+export { asn1js, pkijs };
 
 export const crypto = new Crypto();
 const cryptoName = "@peculiar/webcrypto";
