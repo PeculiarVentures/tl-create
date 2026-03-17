@@ -5,7 +5,7 @@
   "module": "build/mjs/index.js",
   "types": "build/types/index.d.ts",
   "scripts": {
-    "test": "NODE_OPTIONS=--no-experimental-strip-types mocha",
+    "test": "mocha",
     "clear": "rimraf build",
     "build": "npm run build:cjs && npm run build:mjs && npm run build:types",
     "build:cjs": "tsc -p tsconfig.json --module commonjs --removeComments --outDir build/cjs",

@@ -27,21 +27,15 @@ describe("EUTL format", () => {
     assert.strictEqual(v, true, "Wrong signature");
   });
 
-  it("TrustServiceStatusList loads RSA-PSS signatures without unsupported-algorithm errors", async () => {
+  it("TrustServiceStatusList verifies RSA-PSS signatures from the German TSL fixture", async () => {
     let eutlText = fs.readFileSync("./test/static/TL-DE-2026-02-rsa-pss.xml", "utf8");
 
     let eutl = new tl_create.TrustServiceStatusList();
     let xml = new DOMParser().parseFromString(eutlText, "application/xml");
     eutl.LoadXml(xml);
 
-    await assert.rejects(
-      eutl.CheckSignature(),
-      (error: Error) => {
-        assert.match(error.message, /Invalid digest/, "Expected RSA-PSS fixture to reach digest validation");
-        assert.doesNotMatch(error.message, /Algorithm is not supported/, "RSA-PSS algorithm should be registered");
-        return true;
-      }
-    );
+    const v = await eutl.CheckSignature();
+    assert.strictEqual(v, true, "Wrong RSA-PSS fixture signature");
   });
 
   it("EU EUTL parse", () => {
