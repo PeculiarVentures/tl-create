@@ -13,7 +13,11 @@ pkijs.setEngine(cryptoName, crypto, new pkijs.CryptoEngine({
   subtle: crypto.subtle
 }));
 
-XmlDSigJs.CryptoConfig.RegisterSignatureAlgorithm(XmlDSigJs.RSA_PSS_SHA1_NAMESPACE, XmlDSigJs.RsaPssWithoutParamsSha1 as any);
-XmlDSigJs.CryptoConfig.RegisterSignatureAlgorithm(XmlDSigJs.RSA_PSS_SHA256_NAMESPACE, XmlDSigJs.RsaPssWithoutParamsSha256 as any);
-XmlDSigJs.CryptoConfig.RegisterSignatureAlgorithm(XmlDSigJs.RSA_PSS_SHA384_NAMESPACE, XmlDSigJs.RsaPssWithoutParamsSha384 as any);
-XmlDSigJs.CryptoConfig.RegisterSignatureAlgorithm(XmlDSigJs.RSA_PSS_SHA512_NAMESPACE, XmlDSigJs.RsaPssWithoutParamsSha512 as any);
+export function registerXmlDsigAlgorithms(): void {
+  XmlDSigJs.CryptoConfig.RegisterSignatureAlgorithm(XmlDSigJs.RSA_PSS_SHA1_NAMESPACE, XmlDSigJs.RsaPssWithoutParamsSha1 as any);
+  XmlDSigJs.CryptoConfig.RegisterSignatureAlgorithm(XmlDSigJs.RSA_PSS_SHA256_NAMESPACE, XmlDSigJs.RsaPssWithoutParamsSha256 as any);
+  XmlDSigJs.CryptoConfig.RegisterSignatureAlgorithm(XmlDSigJs.RSA_PSS_SHA384_NAMESPACE, XmlDSigJs.RsaPssWithoutParamsSha384 as any);
+  XmlDSigJs.CryptoConfig.RegisterSignatureAlgorithm(XmlDSigJs.RSA_PSS_SHA512_NAMESPACE, XmlDSigJs.RsaPssWithoutParamsSha512 as any);
+}
+
+registerXmlDsigAlgorithms();
