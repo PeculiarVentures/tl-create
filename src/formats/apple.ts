@@ -1,5 +1,5 @@
 import request from "sync-request";
-import cheerio from "cheerio";
+import * as cheerio from "cheerio";
 import { TrustedList, X509Certificate } from "../tl";
 
 interface IEVOID {
@@ -109,8 +109,8 @@ export class Apple {
     let verNum = -1;
 
     ch("td").has("img").find("a").each((i, anchor) => {
-      let href = (anchor as cheerio.TagElement).attribs["href"];
-      if (href.startsWith("security_certificates-")) {
+      let href = ch(anchor).attr("href");
+      if (href && href.startsWith("security_certificates-")) {
         let linkVer = href.replace(/^security_certificates-/, "").replace(/\/*$/, "");
         let linkArr = linkVer.split(".");
         let linkNum = parseInt(linkArr[0]) * 1000000;
@@ -138,11 +138,13 @@ export class Apple {
     let filenames: string[] = [];
 
     ch("td").has("img").find("a").each(function (i, anchor) {
-      let href = (anchor as cheerio.TagElement).attribs["href"];
-      if (href.endsWith("/certificates/") || href.endsWith("/../") || (href === "AppleDEVID.cer"))
+      let href = ch(anchor).attr("href");
+      if (href && (href.endsWith("/certificates/") || href.endsWith("/../") || (href === "AppleDEVID.cer")))
         return;
 
-      filenames.push(href);
+      if (href) {
+        filenames.push(href);
+      }
     });
 
     return filenames;
@@ -158,11 +160,13 @@ export class Apple {
     let filenames: string[] = [];
 
     ch("td").has("img").find("a").each(function (i, anchor) {
-      let href = (anchor as cheerio.TagElement).attribs["href"];
-      if (href.endsWith("/certificates/") || href.endsWith("/../"))
+      let href = ch(anchor).attr("href");
+      if (href && (href.endsWith("/certificates/") || href.endsWith("/../")))
         return;
 
-      filenames.push(href);
+      if (href) {
+        filenames.push(href);
+      }
     });
 
     return filenames;
