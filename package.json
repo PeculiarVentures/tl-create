@@ -52,7 +52,6 @@
     "@types/pvutils": "^1.0.0",
     "@types/xmldom": "^0.1.30",
     "mocha": "^11.3.0",
-    "nyc": "^15.1.0",
     "rimraf": "^3.0.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.0"
@@ -66,22 +65,6 @@
   },
   "homepage": "https://github.com/PeculiarVentures/tl-create#readme",
   "description": "Node command line tool to create a X.509 trust list from various trust stores",
-  "nyc": {
-    "extension": [
-      ".ts",
-      ".tsx"
-    ],
-    "include": [
-      "src/**/*.ts"
-    ],
-    "exclude": [
-      "**/*.d.ts"
-    ],
-    "reporter": [
-      "text-summary",
-      "html"
-    ]
-  },
   "mocha": {
     "require": [
       "ts-node/register",
