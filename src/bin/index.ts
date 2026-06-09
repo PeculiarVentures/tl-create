@@ -5,6 +5,7 @@ import * as XAdES from "xadesjs";
 import { DOMParser, XMLSerializer } from "xmldom";
 import * as pvutils from "pvutils";
 import * as nodeCrypto from "crypto";
+import type { Extension } from "pkijs";
 import * as tl_create from "..";
 import * as fs from "fs";
 import * as path from "path";
@@ -355,6 +356,49 @@ async function main() {
 
         let filesJSON: Record<string, Record<string, string>[]> = {};
 
+        const MAX_SKI_FILENAME_LENGTH = 64;
+
+        function hashBuffer(value: ArrayBuffer) {
+          return nodeCrypto.createHash("SHA1")
+            .update(Buffer.from(value))
+            .digest()
+            .toString("hex")
+            .toUpperCase();
+        }
+
+        function getSkiFileName(ski: ArrayBuffer) {
+          const skiHex = pvutils.bufferToHexCodes(ski).toUpperCase();
+
+          if (skiHex.length <= MAX_SKI_FILENAME_LENGTH) {
+            return skiHex;
+          }
+
+          return hashBuffer(ski);
+        }
+
+        function getPublicKeyFileName(publicKey: ArrayBuffer) {
+          return hashBuffer(publicKey);
+        }
+
+        function getSubjectKeyIdentifierValue(extension: Extension) {
+          return extension.parsedValue?.valueBlock?.valueHex || extension.extnValue.valueBlock.valueHex;
+        }
+
+        function writeCertificateFile(filename: string, content: ArrayBuffer, targetDir: string, directory: string) {
+          try {
+            fs.writeFileSync(path.join(targetDir, filename), Buffer.from(content));
+          } catch (err: unknown) {
+            const reason = (err instanceof Error && err.message) ? err.message : String(err);
+            throw new Error(`Unable to write certificate file "${filename}" for ${directory}: ${reason}`);
+          }
+        }
+
+        interface CertificateFile {
+          name: string;
+          nameID: string;
+          content: ArrayBuffer;
+        }
+
         function storeFiles(directory: string, trustList: tl_create.TrustedList) {
           let targetDir = `./roots/${directory}`;
 
@@ -362,8 +406,7 @@ async function main() {
 
           let PKICertificate = pkijs.Certificate;
 
-          let files = [];
-          let noIdFiles = [];
+          let files: CertificateFile[] = [];
 
           for (let i = 0; i < trustList.Certificates.length; i++) {
             let fileRaw = pvutils.stringToArrayBuffer(pvutils.fromBase64(trustList.Certificates[i].raw));
@@ -377,7 +420,7 @@ async function main() {
             try {
               certificate = new PKICertificate({ schema: asn1.result });
             }
-            catch (ex: any) {
+            catch (ex: unknown) {
               continue;
             }
 
@@ -390,7 +433,7 @@ async function main() {
               for (let j = 0; j < extensions.length; j++) {
                 if (extensions[j].extnID === "2.5.29.14") {
                   files.push({
-                    name: pvutils.bufferToHexCodes(extensions[j].parsedValue.valueBlock.valueHex),
+                    name: getSkiFileName(getSubjectKeyIdentifierValue(extensions[j])),
                     nameID: nameID,
                     content: fileRaw.slice(0)
                   });
@@ -401,15 +444,15 @@ async function main() {
             }
 
             if (!isFound) {
-              noIdFiles.push({
-                publicKey: certificate.subjectPublicKeyInfo.subjectPublicKey.valueBlock.valueHex.slice(0),
+              files.push({
+                name: getPublicKeyFileName(certificate.subjectPublicKeyInfo.subjectPublicKey.valueBlock.valueHex),
                 nameID: nameID,
                 content: fileRaw.slice(0)
               });
             }
           }
 
-          if ((files.length) || (noIdFiles.length)) {
+          if (files.length) {
             if (!fs.existsSync(targetDir))
               fs.mkdirSync(targetDir);
           }
@@ -423,40 +466,11 @@ async function main() {
               }
               seenFiles.add(files[k].name);
 
-              // TODO: temporary workaround issue with mozilla cert
-              try {
-                fs.writeFileSync(targetDir + "/" + files[k].name, Buffer.from(files[k].content));
-
-                filesJSON[directory].push({
-                  k: files[k].name,
-                  n: files[k].nameID
-                });
-              } catch (err: any) {
-                if (err.code !== "ENAMETOOLONG") {
-                  throw err;
-                }
-                console.log(err.message);
-              }
-            }
-          }
-
-          if (noIdFiles.length) {
-            let seenFiles = new Set<string>();
-
-            for (let m = 0; m < noIdFiles.length; m++) {
-              let keyID = nodeCrypto.createHash("SHA1").update(Buffer.from(noIdFiles[m].publicKey)).digest().toString("hex").toUpperCase();
-
-              if (seenFiles.has(keyID)) {
-                continue;
-              }
-              seenFiles.add(keyID);
-
+              writeCertificateFile(files[k].name, files[k].content, targetDir, directory);
               filesJSON[directory].push({
-                k: keyID,
-                n: noIdFiles[m].nameID
+                k: files[k].name,
+                n: files[k].nameID
               });
-
-              fs.writeFileSync(targetDir + "/" + keyID, Buffer.from(noIdFiles[m].content));
             }
           }
 
