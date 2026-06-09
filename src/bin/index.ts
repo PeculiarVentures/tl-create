@@ -385,11 +385,12 @@ async function main() {
             let nameID = nodeCrypto.createHash("SHA1").update(Buffer.from(certificate.subject.valueBeforeDecode)).digest().toString("hex").toUpperCase();
 
             let isFound = false;
-            if ("extensions" in certificate) {
-              for (let j = 0; j < certificate.extensions.length; j++) {
-                if (certificate.extensions[j].extnID === "2.5.29.14") {
+            let extensions = certificate.extensions;
+            if (extensions) {
+              for (let j = 0; j < extensions.length; j++) {
+                if (extensions[j].extnID === "2.5.29.14") {
                   files.push({
-                    name: pvutils.bufferToHexCodes(certificate.extensions[j].parsedValue.valueBlock.valueHex),
+                    name: pvutils.bufferToHexCodes(extensions[j].parsedValue.valueBlock.valueHex),
                     nameID: nameID,
                     content: fileRaw.slice(0)
                   });

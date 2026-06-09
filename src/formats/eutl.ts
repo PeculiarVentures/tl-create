@@ -240,11 +240,14 @@ export class TrustServiceStatusList extends XmlObject {
       throw new Error("Null reference exception. Property '#element' is null");
     }
 
-    let xmlSignature = this.#element.getElementsByTagNameNS(XmlDSigJs.XmlSignature.NamespaceURI, "Signature");
+    // Reparse to normalize parser-specific DOM details before canonicalization.
+    // TODO: stringify `element` instead of `ownerDocument` after XAdES fix.
+    const xml = XAdES.Parse(XmlCore.Stringify(this.#element.ownerDocument!));
+    let xmlSignature = xml.getElementsByTagNameNS(XmlDSigJs.XmlSignature.NamespaceURI, "Signature");
 
-    // TODO: change this.m_element.ownerDocument -> this.m_element after XAdES fix;
-    let sxml = new XAdES.SignedXml(this.#element.ownerDocument!);
+    let sxml = new XAdES.SignedXml(xml);
     sxml.LoadXml(xmlSignature[0]);
+
     return sxml.Verify();
   }
 

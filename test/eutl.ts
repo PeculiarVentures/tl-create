@@ -27,6 +27,17 @@ describe("EUTL format", () => {
     assert.strictEqual(v, true, "Wrong signature");
   });
 
+  it("TrustServiceStatusList verifies RSA-PSS signatures from the German TSL fixture", async () => {
+    let eutlText = fs.readFileSync("./test/static/TL-DE-2026-02-rsa-pss.xml", "utf8");
+
+    let eutl = new tl_create.TrustServiceStatusList();
+    let xml = new DOMParser().parseFromString(eutlText, "application/xml");
+    eutl.LoadXml(xml);
+
+    const v = await eutl.CheckSignature();
+    assert.strictEqual(v, true, "Wrong RSA-PSS fixture signature");
+  });
+
   it("EU EUTL parse", () => {
     // get static file
     let eutlText = fs.readFileSync("./test/static/eutl.xml", "utf8");

@@ -71,8 +71,12 @@ export class Cisco {
       throw new Error(`Unknown content type '${contentInfo.contentType}' for contentInfo`);
 
     let signedData2 = new pkijs.SignedData({ schema: contentInfo2.content });
+    const certificates = signedData2.certificates || [];
 
-    for (let cert of signedData2.certificates) {
+    for (let cert of certificates) {
+      if (!(cert instanceof pkijs.Certificate)) {
+        continue;
+      }
       let operator = "Unknown";
       for (let rdn of cert.subject.typesAndValues) {
         if (rdn.type === "2.5.4.10") {
