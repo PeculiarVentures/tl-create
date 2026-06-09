@@ -458,13 +458,10 @@ async function main() {
           }
 
           if (files.length) {
-            let writtenFiles = new Map<string, Date>();
+            let bestFiles = new Map<string, number>();
 
             for (let k = 0; k < files.length; k++) {
-              filesJSON[directory].push({
-                k: files[k].name,
-                n: files[k].nameID
-              });
+              const filename = files[k].name;
 
               let notAfterDate = new Date(0);
               try {
@@ -477,20 +474,33 @@ async function main() {
                 }
               } catch (e) {}
 
-              let shouldWrite = true;
-              if (writtenFiles.has(files[k].name)) {
-                let existingNotAfter = writtenFiles.get(files[k].name)!;
-                if (notAfterDate.getTime() > existingNotAfter.getTime()) {
-                  shouldWrite = true;
-                } else {
-                  shouldWrite = false;
-                }
-              }
+              if (bestFiles.has(filename)) {
+                const existingIndex = bestFiles.get(filename)!;
+                let existingNotAfter = new Date(0);
+                try {
+                  let asn1 = asn1js.fromBER(files[existingIndex].content);
+                  if (asn1.offset !== -1) {
+                    let cert = new PKICertificate({ schema: asn1.result });
+                    if (cert.notAfter && cert.notAfter.value) {
+                      existingNotAfter = new Date(cert.notAfter.value);
+                    }
+                  }
+                } catch (e) {}
 
-              if (shouldWrite) {
-                writtenFiles.set(files[k].name, notAfterDate);
-                writeCertificateFile(files[k].name, files[k].content, targetDir, directory);
+                if (notAfterDate.getTime() > existingNotAfter.getTime()) {
+                  bestFiles.set(filename, k);
+                }
+              } else {
+                bestFiles.set(filename, k);
               }
+            }
+
+            for (const [filename, k] of bestFiles.entries()) {
+              writeCertificateFile(filename, files[k].content, targetDir, directory);
+              filesJSON[directory].push({
+                k: filename,
+                n: files[k].nameID
+              });
             }
           }
 
