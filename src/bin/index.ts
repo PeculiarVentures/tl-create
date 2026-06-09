@@ -458,19 +458,39 @@ async function main() {
           }
 
           if (files.length) {
-            let seenFiles = new Set<string>();
+            let writtenFiles = new Map<string, Date>();
 
             for (let k = 0; k < files.length; k++) {
-              if (seenFiles.has(files[k].name)) {
-                continue;
-              }
-              seenFiles.add(files[k].name);
-
-              writeCertificateFile(files[k].name, files[k].content, targetDir, directory);
               filesJSON[directory].push({
                 k: files[k].name,
                 n: files[k].nameID
               });
+
+              let notAfterDate = new Date(0);
+              try {
+                let asn1 = asn1js.fromBER(files[k].content);
+                if (asn1.offset !== -1) {
+                  let cert = new PKICertificate({ schema: asn1.result });
+                  if (cert.notAfter && cert.notAfter.value) {
+                    notAfterDate = new Date(cert.notAfter.value);
+                  }
+                }
+              } catch (e) {}
+
+              let shouldWrite = true;
+              if (writtenFiles.has(files[k].name)) {
+                let existingNotAfter = writtenFiles.get(files[k].name)!;
+                if (notAfterDate.getTime() > existingNotAfter.getTime()) {
+                  shouldWrite = true;
+                } else {
+                  shouldWrite = false;
+                }
+              }
+
+              if (shouldWrite) {
+                writtenFiles.set(files[k].name, notAfterDate);
+                writeCertificateFile(files[k].name, files[k].content, targetDir, directory);
+              }
             }
           }
 
