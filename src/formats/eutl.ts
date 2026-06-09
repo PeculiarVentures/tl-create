@@ -7,8 +7,6 @@ import { crypto } from "../crypto";
 
 XAdES.Application.setEngine("@peculiar/webcrypto", crypto);
 
-const RSA_PSS_OID = "1.2.840.113549.1.1.10";
-
 export interface EUTLParameters {
   url?: string;
   timeout?: number;
@@ -100,36 +98,6 @@ export class EUTL {
     }
 
     return tl;
-  }
-}
-
-function getImportAlgorithm(algorithm: Algorithm): Algorithm {
-  const algorithmAny = algorithm as any;
-
-  return {
-    name: algorithm.name,
-    ...(algorithmAny.hash ? {
-      hash: typeof algorithmAny.hash === "string"
-        ? { name: algorithmAny.hash }
-        : algorithmAny.hash
-    } : {})
-  } as Algorithm;
-}
-
-async function exportSignatureVerificationKey(cert: XmlDSigJs.X509Certificate, algorithm: Algorithm): Promise<CryptoKey> {
-  try {
-    return await cert.exportKey(algorithm);
-  } catch (error) {
-    const certificate = cert as any;
-    const subjectPublicKeyInfo = certificate.simpl?.subjectPublicKeyInfo;
-
-    if (subjectPublicKeyInfo?.algorithm?.algorithmId !== RSA_PSS_OID) {
-      throw error;
-    }
-
-    // pkijs rejects rsaPSS SubjectPublicKeyInfo OIDs here, but WebCrypto imports the SPKI correctly.
-    const spki = subjectPublicKeyInfo.toSchema().toBER(false);
-    return crypto.subtle.importKey("spki", spki, getImportAlgorithm(algorithm), true, ["verify"]);
   }
 }
 
@@ -284,38 +252,7 @@ export class TrustServiceStatusList extends XmlObject {
     let sxml = new XAdES.SignedXml(xml);
     sxml.LoadXml(xmlSignature[0]);
 
-    const algorithm = sxml.Algorithm!;
-    const verificationKeys: CryptoKey[] = [];
-    let lastKeyError: unknown = null;
-
-    for (const keyInfoClause of sxml.XmlSignature.KeyInfo.GetIterator()) {
-      try {
-        if (keyInfoClause instanceof XmlDSigJs.KeyInfoX509Data) {
-          for (const cert of keyInfoClause.Certificates) {
-            verificationKeys.push(await exportSignatureVerificationKey(cert, algorithm));
-          }
-        } else {
-          verificationKeys.push(await keyInfoClause.exportKey());
-        }
-      } catch (error) {
-        lastKeyError = error;
-      }
-    }
-
-    if (!verificationKeys.length) {
-      if (lastKeyError) {
-        throw lastKeyError;
-      }
-      return sxml.Verify();
-    }
-
-    for (const key of verificationKeys) {
-      if (await sxml.Verify({ key })) {
-        return true;
-      }
-    }
-
-    return false;
+    return sxml.Verify();
   }
 
 }
