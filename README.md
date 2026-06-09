@@ -127,6 +127,13 @@ files
 
 The "files" format is intended to store all certificates in separate files under specific directory. For example if a certificate exists in Mozilla Trust List and has "SubjectKeyIdentifier" equal to "ABABABABABABABBB" the certificate content would be stored under "mozilla/ABABABABABABABBB". So, for Mozilla Trust List root directory would be "mozilla", for Microsoft - "microsoft", for Apple - "apple", for Cisco - "cisco".
 
+Certificate filenames are derived as follows:
+- If the certificate has a Subject Key Identifier and its hex-encoded value is 64 characters or shorter, the filename is the uppercase hex-encoded Subject Key Identifier.
+- If the certificate has a Subject Key Identifier but its hex-encoded value is longer than 64 characters, the filename is the uppercase SHA-1 hash of the raw Subject Key Identifier extension value.
+- If the certificate has no Subject Key Identifier, the filename is the uppercase SHA-1 hash of the raw subject public key bit string.
+
+Duplicate filenames are written only once per trust list directory.
+
 **NOTE**: Default output format is 'js'
 
 ## Install
