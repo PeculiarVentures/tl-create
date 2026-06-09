@@ -16,6 +16,19 @@ describe("TrustedList format", function () {
         assert.strictEqual(tl.Certificates.length, 3, "Wrong Certificates length");
     });
 
+    it("Deduplicate identical certificates and merge trust and evpolicy", function () {
+        let tl = new tl_create.TrustedList();
+
+        tl.AddCertificate({ raw: "A1==", trust: ["T1"], evpolicy: ["P1"], source: "S1", operator: "O1" });
+        tl.AddCertificate({ raw: "A1==", trust: ["T2"], evpolicy: ["P2"] });
+
+        assert.strictEqual(tl.Certificates.length, 1);
+        assert.deepStrictEqual(tl.Certificates[0].trust, ["T1", "T2"]);
+        assert.deepStrictEqual(tl.Certificates[0].evpolicy, ["P1", "P2"]);
+        assert.strictEqual(tl.Certificates[0].source, "S1");
+        assert.strictEqual(tl.Certificates[0].operator, "O1");
+    });
+
     it("Convert trusted list to JSON", function () {
         let tl = new tl_create.TrustedList();
 

@@ -19,6 +19,27 @@ export class TrustedList {
   AddCertificate(cert: X509Certificate): void {
     cert.raw = cert.raw.replace(/-----(BEGIN|END) CERTIFICATE-----/g, "").replace(/\s/g, "");
 
+    if (cert.raw !== "") {
+      const existing = this.m_certificates.find(c => c.raw === cert.raw);
+      if (existing) {
+        if (cert.trust) {
+          if (!existing.trust) existing.trust = [];
+          for (const t of cert.trust) {
+            if (existing.trust.indexOf(t) === -1) existing.trust.push(t);
+          }
+        }
+        if (cert.evpolicy) {
+          if (!existing.evpolicy) existing.evpolicy = [];
+          for (const p of cert.evpolicy) {
+            if (existing.evpolicy.indexOf(p) === -1) existing.evpolicy.push(p);
+          }
+        }
+        if (!existing.source && cert.source) existing.source = cert.source;
+        if (!existing.operator && cert.operator) existing.operator = cert.operator;
+        return;
+      }
+    }
+
     this.m_certificates.push(cert);
   }
 
