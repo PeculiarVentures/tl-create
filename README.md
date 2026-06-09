@@ -9,8 +9,8 @@
 A cross platform command line tool to create a X.509 trust list from various trust stores.
 
 There are various organizations that produce lists of certificates that they believe should be trusted for one thing or another. These include:
-- Mozilla [list](http://mxr.mozilla.org/mozilla/source/security/nss/lib/ckfw/builtins/certdata.txt?raw=1)
-- Microsoft [list](http://technet.microsoft.com/en-us/library/cc751157.aspx),
+- Mozilla [list](http://mxr.mozilla.org/mozilla/source/security/nss/lib/ckfw/builtins/certdata.txt?raw=1) 
+- Microsoft [list](http://technet.microsoft.com/en-us/library/cc751157.aspx), 
 - Apple [list](http://www.apple.com/certificateauthority/ca_program.html)
 - European Union "Trust Service Providers" [list](https://ec.europa.eu/digital-agenda/en/eu-trusted-lists-certification-service-providers)
 
@@ -45,7 +45,7 @@ This would produce a file that looked something like this:
 node src/bin/tl-create.js --microsoft --format pem roots.pem
 ```
 
-#### Valid Microsoft trust purposes
+#### Valid Microsoft trust purposes 
 ```
   SERVER_AUTH
   CLIENT_AUTH
@@ -66,7 +66,7 @@ node src/bin/tl-create.js --microsoft --format pem roots.pem
 node src/bin/tl-create.js --mozilla --format pem roots.pem
 ```
 
-#### Valid Mozilla trust purposes
+#### Valid Mozilla trust purposes 
 ```
   DIGITAL_SIGNATURE
   NON_REPUDIATION
@@ -96,7 +96,7 @@ node src/bin/tl-create.js --apple --format pem roots.pem
 node src/bin/tl-create.js --aatl --format pem roots.pem
 ```
 
-#### Valid AATL trust purposes
+#### Valid AATL trust purposes 
 ```
   ROOT
   CERTIFIED_DOCUMENTS
@@ -115,9 +115,9 @@ node src/bin/tl-create.js --eutl --format pem roots.pem
 node src/bin/tl-create.js --mozilla --microsoft --for "SERVER_AUTH" --format pem roots.pem
 ```
 
-**NOTE**: The default is ALL purposes
+**NOTE**: The default is ALL purposes 
 
-### Available output formats
+### Available output formats 
 ```
 js
 pkijs
@@ -135,7 +135,7 @@ The "files" format is intended to store all certificates in separate files under
 git clone https://github.com/PeculiarVentures/tl-create.git
 cd tl-create
 npm install -g
-```
+``` 
 
 
 ## Bug Reporting

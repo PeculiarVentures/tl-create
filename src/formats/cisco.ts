@@ -74,11 +74,11 @@ export class Cisco {
     const certificates = signedData2.certificates || [];
 
     for (let cert of certificates) {
-      if (!("subject" in cert)) {
+      if (!(cert instanceof pkijs.Certificate)) {
         continue;
       }
       let operator = "Unknown";
-      for (let rdn of (cert as any).subject.typesAndValues) {
+      for (let rdn of cert.subject.typesAndValues) {
         if (rdn.type === "2.5.4.10") {
           operator = rdn.value.valueBlock.value;
           break;
