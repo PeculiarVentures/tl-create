@@ -513,11 +513,17 @@ class TSPService extends XmlObject {
       throw new Error("Parameter 'value' is required");
 
     if ((value.localName === XmlTrustServiceStatusList.ElementNames.TSPService) && (value.namespaceURI === XmlTrustServiceStatusList.NamespaceURI)) {
-      let ServiceTypeIdentifierNodes = value.getElementsByTagNameNS(XmlTrustServiceStatusList.NamespaceURI, XmlTrustServiceStatusList.ElementNames.ServiceTypeIdentifier);
+      let targetNode: Element = value;
+      const serviceInfoNodes = value.getElementsByTagNameNS(XmlTrustServiceStatusList.NamespaceURI, "ServiceInformation");
+      if (serviceInfoNodes.length > 0) {
+        targetNode = serviceInfoNodes[0] as Element;
+      }
+
+      let ServiceTypeIdentifierNodes = targetNode.getElementsByTagNameNS(XmlTrustServiceStatusList.NamespaceURI, XmlTrustServiceStatusList.ElementNames.ServiceTypeIdentifier);
       if (ServiceTypeIdentifierNodes.length > 0)
         this.ServiceTypeIdentifier = ServiceTypeIdentifierNodes[0].textContent;
 
-      let DigitalIdNodes = value.getElementsByTagNameNS(XmlTrustServiceStatusList.NamespaceURI, XmlTrustServiceStatusList.ElementNames.DigitalId);
+      let DigitalIdNodes = targetNode.getElementsByTagNameNS(XmlTrustServiceStatusList.NamespaceURI, XmlTrustServiceStatusList.ElementNames.DigitalId);
       for (let i = 0; i < DigitalIdNodes.length; i++) {
         let DigitalId = DigitalIdNodes[i] as Element;
         let X509CertificateNodes = DigitalId.getElementsByTagNameNS(XmlTrustServiceStatusList.NamespaceURI, XmlTrustServiceStatusList.ElementNames.X509Certificate);

@@ -56,4 +56,67 @@ describe("EUTL format", () => {
     assert.strictEqual(tl.Certificates.length, 23);
   });
 
+  it("EUTL parse excludes historical service certificates", () => {
+    const eutlXml = `<?xml version="1.0" encoding="UTF-8"?>
+<TrustServiceStatusList xmlns="http://uri.etsi.org/02231/v2#" Id="TEST-TL" TSLTag="http://uri.etsi.org/19612/TSLTag">
+  <SchemeInformation>
+    <TSLVersionIdentifier>5</TSLVersionIdentifier>
+    <TSLSequenceNumber>1</TSLSequenceNumber>
+    <TSLType>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric</TSLType>
+    <SchemeOperatorName><Name xml:lang="en">Test Operator</Name></SchemeOperatorName>
+    <SchemeOperatorAddress><PostalAddresses><PostalAddress xml:lang="en"><StreetAddress>1 Street</StreetAddress><Locality>City</Locality><PostalCode>1234</PostalCode><CountryName>XX</CountryName></PostalAddress></PostalAddresses><ElectronicAddress><URI>mailto:info@test.com</URI></ElectronicAddress></SchemeOperatorAddress>
+    <SchemeName><Name xml:lang="en">Test List</Name></SchemeName>
+    <SchemeInformationURI><URI>http://test.com</URI></SchemeInformationURI>
+    <StatusDeterminationApproach>http://uri.etsi.org/TrstSvc/TrustedList/StatusDetn/EUappropriate</StatusDeterminationApproach>
+    <SchemeTypeCommunityRules><URI>http://rules</URI></SchemeTypeCommunityRules>
+    <SchemeTerritory>XX</SchemeTerritory>
+    <PolicyOrLegalNotice><TSLLegalNotice xml:lang="en">Notice</TSLLegalNotice></PolicyOrLegalNotice>
+    <HistoricalInformationPeriod>65535</HistoricalInformationPeriod>
+    <PointersToOtherTSL></PointersToOtherTSL>
+    <ListIssueDateTime>2026-06-09T00:00:00Z</ListIssueDateTime>
+    <NextUpdate><dateTime>2026-12-09T00:00:00Z</dateTime></NextUpdate>
+  </SchemeInformation>
+  <TrustServiceProviderList>
+    <TrustServiceProvider>
+      <TSPInformation>
+        <TSPName><Name xml:lang="en">Test TSP</Name></TSPName>
+      </TSPInformation>
+      <TSPServices>
+        <TSPService>
+          <ServiceInformation>
+            <ServiceTypeIdentifier>http://uri.etsi.org/TrstSvc/Svctype/CA/QC</ServiceTypeIdentifier>
+            <ServiceName><Name xml:lang="en">Active Service</Name></ServiceName>
+            <ServiceDigitalIdentity>
+              <DigitalId>
+                <X509Certificate>ACTIVE_CERT_BYTES</X509Certificate>
+              </DigitalId>
+            </ServiceDigitalIdentity>
+            <ServiceStatus>http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/granted</ServiceStatus>
+            <StatusStartingTime>2026-06-09T00:00:00Z</StatusStartingTime>
+          </ServiceInformation>
+          <ServiceHistory>
+            <ServiceHistoryInstance>
+              <ServiceTypeIdentifier>http://uri.etsi.org/TrstSvc/Svctype/CA/QC</ServiceTypeIdentifier>
+              <ServiceName><Name xml:lang="en">Historical Service</Name></ServiceName>
+              <ServiceDigitalIdentity>
+                <DigitalId>
+                  <X509Certificate>HISTORICAL_CERT_BYTES</X509Certificate>
+                </DigitalId>
+              </ServiceDigitalIdentity>
+              <ServiceStatus>http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/withdrawn</ServiceStatus>
+              <StatusStartingTime>2020-06-09T00:00:00Z</StatusStartingTime>
+            </ServiceHistoryInstance>
+          </ServiceHistory>
+        </TSPService>
+      </TSPServices>
+    </TrustServiceProvider>
+  </TrustServiceProviderList>
+</TrustServiceStatusList>`;
+
+    const eutl = new tl_create.EUTL();
+    const tl = eutl.getTrusted(eutlXml);
+    assert.strictEqual(tl.Certificates.length, 1);
+    assert.strictEqual(tl.Certificates[0].raw, "ACTIVE_CERT_BYTES");
+  });
+
 });
